@@ -2,6 +2,7 @@
 
 import LiveSet from 'live-set';
 import type {LiveSetSubscription} from 'live-set';
+import liveSetMerge from 'live-set/merge';
 import liveSetFilter from 'live-set/filter';
 import liveSetFlatMap from 'live-set/flatMap';
 import liveSetMap from 'live-set/map';
@@ -36,7 +37,7 @@ export type Selector =
   // changed, then it will be re-considered and may be added or removed from
   // the matched set.
 
-  | {| $or: Array<Selector> |}
+  | {| $or: Array<Array<Selector>> |}
   // The $or operator forks the operator list into multiple lists, and then
   // re-combines the resulting matched sets.
 
@@ -82,7 +83,11 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
         return addTaggedLiveSet($tag, ownedBy, liveSet);
       };
     } else if (item.$or) {
-      throw new Error('TODO');
+      const transformers = item.$or.map(makeLiveSetTransformer);
+      return (liveSet, addSubscription, addTaggedLiveSet) =>
+        liveSetMerge(transformers.map(transformer =>
+          transformer(liveSet, addSubscription, addTaggedLiveSet)
+        ));
     } else if (item.$watch) {
       throw new Error('TODO');
     } else if (item.$log) {

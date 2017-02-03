@@ -36,23 +36,27 @@ document.documentElement.innerHTML = `
             <div class="body">FIRST</div>
             <div class="replies"></div>
           </div>
-          <div class="comment">
-            <div class="body">SECOND</div>
-            <div class="replies">
-              <div class="comment">
-                <div class="body">reply to second</div>
-                <div class="replies">
-                  <div class="comment">
-                    <div class="body">reply to you</div>
-                    <div class="replies"></div>
+          <div class="comment2">
+            <div class="comment2-inner">
+              <div class="body">SECOND</div>
+              <div class="replies">
+                <div class="comment">
+                  <div class="body">reply to second</div>
+                  <div class="replies">
+                    <div class="comment">
+                      <div class="body">reply to you</div>
+                      <div class="replies"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="comment">
-            <div class="body">THIRD</div>
-            <div class="replies"></div>
+          <div class="comment2">
+            <div class="comment2-inner">
+              <div class="body">THIRD</div>
+              <div class="replies"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -97,7 +101,14 @@ test('works', async () => {
       {$tag: 'commentSection'}
     ]},
     {sources: ['commentSection', 'replySection'], selectors: [
-      '.comment',
+      {$or: [
+        [
+          '.comment'
+        ], [
+          '.comment2',
+          '.comment2-inner'
+        ]
+      ]},
       {$tag: 'comment', ownedBy: ['comment']}
     ]},
     {sources: ['comment'], selectors: [
