@@ -65,19 +65,18 @@ type ElementContext = {
   parents: Array<NodeTagPair>;
 };
 
-function makeElementContextChildLiveSet(ec: ElementContext): LiveSet<ElementContext> {
-  return liveSetMap(makeElementChildLiveSet(ec.el), el =>
-    ({el, parents: ec.parents})
-  );
-}
-
 function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const itemString = item;
-      const filterFn = ({el}) => matchesSelector(el, itemString);
-      const flatMapFn = ec =>
-        liveSetFilter(makeElementContextChildLiveSet(ec), filterFn);
+      const filterXf = t.filter(el => matchesSelector(el, itemString));
+      const flatMapFn = ec => {
+        const transducer = t.compose(
+          filterXf,
+          t.map(el => ({el, parents: ec.parents}))
+        );
+        return liveSetTransduce(makeElementChildLiveSet(ec.el), transducer);
+      };
       return (liveSet) => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$tag) {
       const {$tag, ownedBy} = item;
