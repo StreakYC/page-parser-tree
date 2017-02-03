@@ -97,7 +97,6 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
         console.log($log, ec.el); //eslint-disable-line no-console
       };
       return (liveSet, addSubscription) => {
-        liveSet.values().forEach(perItem);
         addSubscription(liveSet.subscribe(changes => {
           changes.forEach(change => {
             if (change.type === 'add') {
@@ -105,6 +104,7 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
             }
           });
         }));
+        liveSet.values().forEach(perItem);
         return liveSet;
       };
     } else if (item.$filter) {
@@ -221,6 +221,8 @@ export default class PageParserTree {
       const mappedTls = liveSetMap(taggedLiveSet, addItem);
 
       let sub;
+      let gotFirstItem = false;
+
       mappedTls.subscribe({
         start: _sub => {
           sub = _sub;
@@ -248,8 +250,7 @@ export default class PageParserTree {
         }
       });
 
-      let gotFirstItem = false;
-      if (Array.from(mappedTls.values()).length) {
+      if (!gotFirstItem && Array.from(mappedTls.values()).length) {
         gotFirstItem = true;
         this._processSourceLiveSet(tag, mappedTls);
       }
