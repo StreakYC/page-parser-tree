@@ -30,6 +30,13 @@ document.documentElement.innerHTML = `
         </div>
       </div>
     </div>
+    <div>
+      <div>
+        <div>
+          <a href="blah">five</a>
+        </div>
+      </div>
+    </div>
   </nav>
   <div class="page-outer">
     <div>
@@ -101,7 +108,8 @@ test('sync test', () => {
     {sources: ['topnav'], selectors: [
       'div',
       {$map: el => el.querySelector('a[href="blah"]')},
-      {$tag: 'navBlahLink'}
+      {$filter: el => el.textContent !== 'five'},
+      {$tag: 'navBlahFourLink'}
     ]},
     {sources: [null], selectors: [
       'body',
@@ -132,7 +140,7 @@ test('sync test', () => {
     ]}
   ]);
 
-  expect(Array.from(page.tree.getAllByTag('navBlahLink').values()).map(x => x.getValue().outerHTML))
+  expect(Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(x => x.getValue().outerHTML))
     .toEqual([
       '<a href="blah">four</a>'
     ]);

@@ -108,7 +108,9 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
         return liveSet;
       };
     } else if (item.$filter) {
-      throw new Error('TODO');
+      const {$filter} = item;
+      const filterFn = ({el}) => $filter(el);
+      return liveSet => liveSetFilter(liveSet, filterFn);
     } else if (item.$map) {
       const {$map} = item;
       const transducer = t.compose(
