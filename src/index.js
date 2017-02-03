@@ -179,13 +179,10 @@ export default class PageParserTree {
         [selectors, makeLiveSetTransformer(selectors)]
       )
     );
-    const rootMatchedSet = new LiveSet({
-      read: () => new Set([{
-        el: this.tree.getValue(),
-        parents: [{tag: null, node: this.tree}]
-      }]),
-      listen: () => {}
-    });
+    const rootMatchedSet = LiveSet.active(new Set([{
+      el: this.tree.getValue(),
+      parents: [{tag: null, node: this.tree}]
+    }])).liveSet;
     this._processSourceLiveSet(null, rootMatchedSet);
   }
 

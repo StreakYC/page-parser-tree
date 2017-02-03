@@ -7,7 +7,8 @@ export default function makeElementChildLiveSet(element: HTMLElement): LiveSet<H
     read() {
       return new Set(Array.from(element.children));
     },
-    listen(controller) {
+    listen(setValues, controller) {
+      setValues(this.read());
       const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
           Array.prototype.forEach.call(mutation.addedNodes, el => controller.add(el));
