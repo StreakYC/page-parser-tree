@@ -23,6 +23,13 @@ document.documentElement.innerHTML = `
     <div>
       <a>three</a>
     </div>
+    <div>
+      <div>
+        <div>
+          <a href="blah">four</a>
+        </div>
+      </div>
+    </div>
   </nav>
   <div class="page-outer">
     <div>
@@ -79,14 +86,22 @@ function qs(el: HTMLElement, selector: string): HTMLElement {
   return result;
 }
 
-test('works', async () => {
+test('sync test', () => {
   const page = new PageParserTree(document, [
     {sources: [null], selectors: [
       'body',
       'nav',
+      {$tag: 'topnav'}
+    ]},
+    {sources: ['topnav'], selectors: [
       'div',
       'a',
       {$tag: 'navLink'}
+    ]},
+    {sources: ['topnav'], selectors: [
+      'div',
+      {$map: el => el.querySelector('a[href="blah"]')},
+      {$tag: 'navBlahLink'}
     ]},
     {sources: [null], selectors: [
       'body',
@@ -117,7 +132,10 @@ test('works', async () => {
     ]}
   ]);
 
-  // await delay(0);
+  expect(Array.from(page.tree.getAllByTag('navBlahLink').values()).map(x => x.getValue().outerHTML))
+    .toEqual([
+      '<a href="blah">four</a>'
+    ]);
 
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
   expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))

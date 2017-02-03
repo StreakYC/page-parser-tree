@@ -1,7 +1,9 @@
 /* @flow */
 
+import t from 'transducers.js';
 import LiveSet from 'live-set';
 import type {LiveSetSubscription} from 'live-set';
+import liveSetTransduce from 'live-set/transduce';
 import liveSetMerge from 'live-set/merge';
 import liveSetFilter from 'live-set/filter';
 import liveSetFlatMap from 'live-set/flatMap';
@@ -109,7 +111,12 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
     } else if (item.$filter) {
       throw new Error('TODO');
     } else if (item.$map) {
-      throw new Error('TODO');
+      const {$map} = item;
+      const transducer = t.compose(
+        t.map(ec => ({el: $map(ec.el), parents: ec.parents})),
+        t.filter(ec => ec.el != null)
+      );
+      return liveSet => liveSetTransduce(liveSet, transducer);
     }
     throw new Error(`Invalid selector item: ${JSON.stringify(item)}`);
   });
