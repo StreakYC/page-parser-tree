@@ -155,18 +155,30 @@ export default class PageParserTree {
       rootEl = (root:any);
     }
     this._taggers = taggers;
-    const tags = Array.prototype.concat.apply(
-      [],
-      taggers.map(tagger =>
-        tagger.selectors
-          .filter(item =>
-            item && typeof (item:any).$tag === 'string'
-          )
-          .map((item:any) =>
-            ({tag: item.$tag, ownedBy: item.ownedBy})
-          )
-      )
-    );
+
+    const tags = [];
+    const tagMap = new Map();
+    this._taggers.forEach(tagger => {
+      tagger.selectors.forEach(item => {
+        if (typeof item === 'object' && item.$tag) {
+          const {$tag, ownedBy} = item;
+          if (tagMap.has($tag)) {
+            const prevOwnedBy = tagMap.get($tag) || [];
+            const newOwnedBy = ownedBy || [];
+            if (
+              prevOwnedBy.length !== newOwnedBy.length ||
+              prevOwnedBy.some((x,i) => x !== newOwnedBy[i])
+            ) {
+              throw new Error('tag specified twice with different ownedBy values: '+$tag);
+            }
+          } else {
+            tagMap.set($tag, ownedBy);
+            tags.push({tag: $tag, ownedBy});
+          }
+        }
+      });
+    });
+
     this.tree = new TagTree({
       root: rootEl,
       tags,

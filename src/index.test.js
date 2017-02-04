@@ -173,3 +173,64 @@ test('sync test', () => {
       'THIRD'
     ]);
 });
+
+describe('validation', () => {
+  test('ownedBy non-existent tag', () => {
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        'a',
+        {$tag: 'foo', ownedBy: ['bar']}
+      ]}
+    ])).toThrowError();
+  });
+
+  test('inconsistent definitions', () => {
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        {$tag: 'bar'},
+        {$tag: 'foo', ownedBy: ['foo']},
+        {$tag: 'foo', ownedBy: ['bar']},
+      ]}
+    ])).toThrowError();
+
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        {$tag: 'bar'},
+        {$tag: 'foo', ownedBy: ['foo', 'bar']},
+        {$tag: 'foo', ownedBy: ['bar']},
+      ]}
+    ])).toThrowError();
+
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        {$tag: 'bar'},
+        {$tag: 'foo'},
+        {$tag: 'foo', ownedBy: ['bar']},
+      ]}
+    ])).toThrowError();
+
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        {$tag: 'bar'},
+        {$tag: 'foo', ownedBy: ['bar']},
+        {$tag: 'foo'},
+      ]}
+    ])).toThrowError();
+  });
+
+  test('consistent redefinition', () => {
+    expect(() => new PageParserTree(document, [
+      {sources: [null], selectors: [
+        'body',
+        {$tag: 'bar'},
+        {$tag: 'foo', ownedBy: ['bar']},
+        {$tag: 'foo', ownedBy: ['bar']},
+      ]}
+    ])).not.toThrowError();
+  });
+});
