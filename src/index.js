@@ -234,9 +234,15 @@ export default class PageParserTree {
           changes.forEach(change => {
             if (change.type === 'remove') {
               const ec = change.value;
-              const parent = findParent(ec.parents.slice(0, -1));
               const node = ec.parents[ec.parents.length-1].node;
-              this._treeController.removeTaggedNode(parent, tag, node);
+
+              // The node might have already been removed from the tree if it
+              // is owned by a node that was just removed.
+              const nodeParent = node.getParent();
+              if (nodeParent && nodeParent.ownsNode(node)) {
+                const parent = findParent(ec.parents.slice(0, -1));
+                this._treeController.removeTaggedNode(parent, tag, node);
+              }
             }
           });
         },
