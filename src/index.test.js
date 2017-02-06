@@ -3,13 +3,36 @@
 import PageParserTree from '.';
 import LiveSet from 'live-set';
 import type {TagTreeNode} from 'tag-tree';
+import EventEmitter from 'events';
+import delay from 'pdelay';
+
+const emitters = new WeakMap();
+function ev(el: Element): EventEmitter {
+  let emitter = emitters.get(el);
+  if (!emitter) {
+    emitter = new EventEmitter();
+    emitters.set(el, emitter);
+  }
+  return emitter;
+}
 
 global.MutationObserver = class {
-  observe() {}
-  disconnect() {}
+  _elements = [];
+  _cb: Function;
+  constructor(cb) {
+    this._cb = cb;
+  }
+  _listener = mutations => {
+    this._cb(mutations);
+  };
+  observe(element) {
+    this._elements.push(element);
+    ev(element).on('mutate', this._listener);
+  }
+  disconnect() {
+    this._elements.forEach(el => ev(el).removeListener('mutate', this._listener));
+  }
 };
-
-global._log = '';
 
 if (!document.documentElement) throw new Error();
 document.documentElement.innerHTML = `
@@ -93,7 +116,7 @@ function qs(el: HTMLElement, selector: string): HTMLElement {
   return result;
 }
 
-test('sync test', () => {
+test('sync test', async () => {
   const page = new PageParserTree(document, [
     {sources: [null], selectors: [
       'body',
@@ -164,13 +187,34 @@ test('sync test', () => {
       'bar foo'
     ]);
 
-  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = Array.from(topLevelComments.values())[0].getOwnedByTag('comment');
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
+  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
 
   expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
       'FIRST',
       'SECOND',
       'THIRD'
+    ]);
+
+  {
+    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    foobarComment.getValue().remove();
+    ev(foobarCommentParentElement).emit('mutate', [{
+      addedNodes: [],
+      removedNodes: [foobarComment.getValue()]
+    }]);
+  }
+
+  await delay(0);
+
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
     ]);
 });
 
