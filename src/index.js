@@ -283,7 +283,7 @@ export default class PageParserTree {
         }
       });
 
-      if (!gotFirstItem && Array.from(mappedTls.values()).length) {
+      if (!gotFirstItem && mappedTls.values().size) {
         gotFirstItem = true;
         this._processSourceLiveSet(tag, mappedTls);
       }
