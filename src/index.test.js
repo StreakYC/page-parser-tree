@@ -117,51 +117,64 @@ function qs(el: HTMLElement, selector: string): HTMLElement {
 }
 
 test('sync test', async () => {
-  const page = new PageParserTree(document, [
-    {sources: [null], selectors: [
-      'body',
-      'nav',
-      {$tag: 'topnav'}
-    ]},
-    {sources: ['topnav'], selectors: [
-      'div',
-      'a',
-      {$tag: 'navLink'}
-    ]},
-    {sources: ['topnav'], selectors: [
-      'div',
-      {$map: el => el.querySelector('a[href="blah"]')},
-      {$filter: el => el.textContent !== 'five'},
-      {$tag: 'navBlahFourLink'}
-    ]},
-    {sources: [null], selectors: [
-      'body',
-      '.page-sidebar',
-      'div',
-      {$tag: 'sidebarItem'}
-    ]},
-    {sources: [null], selectors: [
-      'body',
-      '.page-outer',
-      '.article-comments',
-      {$tag: 'commentSection'}
-    ]},
-    {sources: ['commentSection', 'replySection'], selectors: [
-      {$or: [
-        [
-          '.comment'
-        ], [
-          '.comment2',
-          '.comment2-inner'
-        ]
+  const page = new PageParserTree(document, {
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], selectors: [
+        'body',
+        'nav',
+        {$tag: 'topnav'}
       ]},
-      {$tag: 'comment', ownedBy: ['comment']}
-    ]},
-    {sources: ['comment'], selectors: [
-      '.replies',
-      {$tag: 'replySection', ownedBy: ['comment']}
-    ]}
-  ]);
+      {sources: ['topnav'], selectors: [
+        'div',
+        'a',
+        {$tag: 'navLink'}
+      ]},
+      {sources: ['topnav'], selectors: [
+        'div',
+        {$map: el => el.querySelector('a[href="blah"]')},
+        {$filter: el => el.textContent !== 'five'},
+        {$tag: 'navBlahFourLink'}
+      ]},
+      {sources: [null], selectors: [
+        'body',
+        '.page-sidebar',
+        'div',
+        {$tag: 'sidebarItem'}
+      ]},
+      {sources: [null], selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments',
+        {$tag: 'commentSection'}
+      ]},
+      {sources: ['commentSection', 'replySection'], selectors: [
+        {$or: [
+          [
+            '.comment'
+          ], [
+            '.comment2',
+            '.comment2-inner'
+          ]
+        ]},
+        {$tag: 'comment'}
+      ]},
+      {sources: ['comment'], selectors: [
+        '.replies',
+        {$tag: 'replySection'}
+      ]},
+    ],
+    finders: {
+      comment: {
+        fn(root) {
+          return root.querySelectorAll('.comment, .comment2-inner');
+        }
+      },
+    }
+  });
 
   expect(Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(x => x.getValue().outerHTML))
     .toEqual([
@@ -220,61 +233,18 @@ test('sync test', async () => {
 
 describe('validation', () => {
   test('ownedBy non-existent tag', () => {
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        'a',
-        {$tag: 'foo', ownedBy: ['bar']}
-      ]}
-    ])).toThrowError();
-  });
-
-  test('inconsistent definitions', () => {
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        {$tag: 'bar'},
-        {$tag: 'foo', ownedBy: ['foo']},
-        {$tag: 'foo', ownedBy: ['bar']},
-      ]}
-    ])).toThrowError();
-
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        {$tag: 'bar'},
-        {$tag: 'foo', ownedBy: ['foo', 'bar']},
-        {$tag: 'foo', ownedBy: ['bar']},
-      ]}
-    ])).toThrowError();
-
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        {$tag: 'bar'},
-        {$tag: 'foo'},
-        {$tag: 'foo', ownedBy: ['bar']},
-      ]}
-    ])).toThrowError();
-
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        {$tag: 'bar'},
-        {$tag: 'foo', ownedBy: ['bar']},
-        {$tag: 'foo'},
-      ]}
-    ])).toThrowError();
-  });
-
-  test('consistent redefinition', () => {
-    expect(() => new PageParserTree(document, [
-      {sources: [null], selectors: [
-        'body',
-        {$tag: 'bar'},
-        {$tag: 'foo', ownedBy: ['bar']},
-        {$tag: 'foo', ownedBy: ['bar']},
-      ]}
-    ])).not.toThrowError();
+    expect(() => new PageParserTree(document, {
+      tags: {
+        foo: {ownedBy: ['bar']}
+      },
+      watchers: [
+        {sources: [null], selectors: [
+          'body',
+          'a',
+          {$tag: 'foo'}
+        ]}
+      ],
+      finders: {}
+    })).toThrowError();
   });
 });

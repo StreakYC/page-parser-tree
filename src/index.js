@@ -47,23 +47,39 @@ export type Selector =
   // The $log operator uses `console.log` to log every element in the matched
   // set to the console with a given string prefix.
 
-  | {| $tag: string, ownedBy?: ?Array<string> |}
+  | {| $tag: string |}
+  // The $tag operator tags all elements currently in the matched set as the
+  // given tag.
 ;
 
-export type Tagger = {|
+export type Watcher = {|
   sources: Array<string|null>;
   selectors: Array<Selector>;
 |};
 
-type NodeTagPair = {
-  tag: ?string;
-  node: TagTreeNode<HTMLElement>;
+export type Finder = {|
+  fn(root: HTMLElement): Array<HTMLElement> | NodeList<HTMLElement>;
+|};
+
+export type TagOptions = {
+  ownedBy?: ?Array<string>;
 };
 
-type ElementContext = {
+export type PageParserTreeOptions = {|
+  tags: {[tag:string]: TagOptions};
+  watchers: Array<Watcher>;
+  finders: {[tag:string]: Finder};
+|};
+
+type NodeTagPair = {|
+  tag: ?string;
+  node: TagTreeNode<HTMLElement>;
+|};
+
+type ElementContext = {|
   el: HTMLElement;
   parents: Array<NodeTagPair>;
-};
+|};
 
 function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer {
   const transformers = selectors.map(item => {
@@ -79,9 +95,9 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
       };
       return (liveSet) => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$tag) {
-      const {$tag, ownedBy} = item;
+      const {$tag} = item;
       return (liveSet, addSubscription, addTaggedLiveSet) => {
-        return addTaggedLiveSet($tag, ownedBy, liveSet);
+        return addTaggedLiveSet($tag, liveSet);
       };
     } else if (item.$or) {
       const transformers = item.$or.map(makeLiveSetTransformer);
@@ -136,17 +152,18 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
 type LiveSetTransformer = (
   liveSet: LiveSet<ElementContext>,
   addSubscription: (sub: LiveSetSubscription) => void,
-  addTaggedLiveSet: (tag: string, ownedBy: ?Array<string>, taggedLiveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>
+  addTaggedLiveSet: (tag: string, taggedLiveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>
 ) => LiveSet<ElementContext>;
 
 export default class PageParserTree {
   tree: TagTree<HTMLElement>;
   _treeController: TagTreeController<HTMLElement>;
-  _taggers: Array<Tagger>;
-  _liveSetTransformers: Map<Array<Selector>, LiveSetTransformer>;
+  _options: PageParserTreeOptions;
+  _tagOptions: Map<string, TagOptions>;
+  _watcherLiveSetTransformers: Map<Array<Selector>, LiveSetTransformer>;
   _subscriptions: Array<LiveSetSubscription> = [];
 
-  constructor(root: Document|HTMLElement, taggers: Array<Tagger>) {
+  constructor(root: Document|HTMLElement, options: PageParserTreeOptions) {
     let rootEl;
     if (root.nodeType === Node.DOCUMENT_NODE) {
       rootEl = ((root:any):Document).documentElement;
@@ -154,26 +171,24 @@ export default class PageParserTree {
     } else {
       rootEl = (root:any);
     }
-    this._taggers = taggers;
 
+    this._options = options;
+
+    this._tagOptions = new Map();
     const tags = [];
-    const tagMap = new Map();
-    this._taggers.forEach(tagger => {
-      tagger.selectors.forEach(item => {
+    Object.keys(this._options.tags).forEach(tag => {
+      const tagOptions = this._options.tags[tag];
+      const {ownedBy} = tagOptions;
+      tags.push({tag, ownedBy});
+      this._tagOptions.set(tag, tagOptions);
+    });
+    this._options.watchers.forEach(watcher => {
+      watcher.selectors.forEach(item => {
         if (typeof item === 'object' && item.$tag) {
-          const {$tag, ownedBy} = item;
-          if (tagMap.has($tag)) {
-            const prevOwnedBy = tagMap.get($tag) || [];
-            const newOwnedBy = ownedBy || [];
-            if (
-              prevOwnedBy.length !== newOwnedBy.length ||
-              prevOwnedBy.some((x,i) => x !== newOwnedBy[i])
-            ) {
-              throw new Error('tag specified twice with different ownedBy values: '+$tag);
-            }
-          } else {
-            tagMap.set($tag, ownedBy);
-            tags.push({tag: $tag, ownedBy});
+          const {$tag} = item;
+          if (!this._tagOptions.has($tag)) {
+            this._tagOptions.set($tag, {});
+            tags.push({tag: $tag});
           }
         }
       });
@@ -186,8 +201,8 @@ export default class PageParserTree {
         this._treeController = controller;
       }
     });
-    this._liveSetTransformers = new Map(
-      this._taggers.map(({selectors}) =>
+    this._watcherLiveSetTransformers = new Map(
+      this._options.watchers.map(({selectors}) =>
         [selectors, makeLiveSetTransformer(selectors)]
       )
     );
@@ -203,8 +218,11 @@ export default class PageParserTree {
       this._subscriptions.push(sub);
     };
 
-    const addTaggedLiveSet = (tag, ownedBy, taggedLiveSet) => {
+    const addTaggedLiveSet = (tag, taggedLiveSet) => {
       const findParent = parents => {
+        const entry = this._tagOptions.get(tag);
+        if (!entry) throw new Error('unknown tag: '+tag);
+        const {ownedBy} = entry;
         let parent = parents[0].node;
         if (ownedBy) {
           for (let i=parents.length-1; i>=1; i--) {
@@ -273,17 +291,17 @@ export default class PageParserTree {
       return mappedTls;
     };
 
-    this._taggers
+    this._options.watchers
       .filter(({sources}) => sources.indexOf(tag) >= 0)
       .forEach(({selectors}) => {
-        const transformer = this._liveSetTransformers.get(selectors);
+        const transformer = this._watcherLiveSetTransformers.get(selectors);
         if (!transformer) throw new Error();
         transformer(liveSet, addSubscription, addTaggedLiveSet);
       });
   }
 
   //TODO
-  // replaceTaggers(taggers: Array<Tagger>) {
-  //   this._taggers = taggers;
+  // Intended for use with hot module replacement.
+  // replaceOptions(options: Array<PageParserTreeOptions>) {
   // }
 }
