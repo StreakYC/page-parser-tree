@@ -5,8 +5,16 @@ import type {TagTree} from 'tag-tree';
 import type {TagOptions, ElementContext, Finder} from '.';
 
 export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
+  let read_elementsLoggedAbout;
   return new LiveSet({
     read() {
+      if (!read_elementsLoggedAbout) {
+        read_elementsLoggedAbout = {
+          missedByWatcher: new WeakSet(),
+          missedByFinder: new WeakSet()
+        };
+      }
+
       const seenElements = new Set();
       let s, watcherSetValues;
       if (watcherSet) {
@@ -50,7 +58,8 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
             const ec = {el, parents};
             s.add(ec);
 
-            if (watcherSet) {
+            if (watcherSet && !read_elementsLoggedAbout.missedByWatcher.has(el)) {
+              read_elementsLoggedAbout.missedByWatcher.add(el);
               logError(new Error('finder found element missed by watcher'), el);
             }
           }
@@ -58,7 +67,8 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
 
         if (watcherSetValues) {
           watcherSetValues.forEach(({el}) => {
-            if (!foundElements.has(el)) {
+            if (!foundElements.has(el) && !read_elementsLoggedAbout.missedByFinder.has(el)) {
+              read_elementsLoggedAbout.missedByFinder.add(el);
               logError(new Error('watcher found element missed by finder'), el);
             }
           });

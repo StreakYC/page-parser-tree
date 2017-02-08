@@ -139,6 +139,10 @@ test('read with bad watcher and good finder', () => {
     ['finder found element missed by watcher', 'div.comment.a2'],
     ['finder found element missed by watcher', 'div.comment.b'],
   ]);
+
+  // Check that we don't logError for the same elements again
+  output.values();
+  expect(logError).toHaveBeenCalledTimes(2);
 });
 
 test('read with good watcher and bad finder', () => {
@@ -159,4 +163,8 @@ test('read with good watcher and bad finder', () => {
     ['watcher found element missed by finder', 'div.comment.a2'],
     ['watcher found element missed by finder', 'div.comment.b'],
   ]);
+
+  // Check that we don't logError for the same elements again
+  output.values();
+  expect(logError).toHaveBeenCalledTimes(2);
 });
