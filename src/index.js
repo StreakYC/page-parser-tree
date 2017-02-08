@@ -59,6 +59,7 @@ export type Watcher = {|
 
 export type Finder = {|
   fn(root: HTMLElement): Array<HTMLElement> | NodeList<HTMLElement>;
+  interval?: ?number;
 |};
 
 export type TagOptions = {
@@ -66,6 +67,7 @@ export type TagOptions = {
 };
 
 export type PageParserTreeOptions = {|
+  logError?: ?(err: Error, el: ?HTMLElement) => void;
   tags: {[tag:string]: TagOptions};
   watchers: Array<Watcher>;
   finders: {[tag:string]: Finder};
@@ -76,7 +78,7 @@ type NodeTagPair = {|
   node: TagTreeNode<HTMLElement>;
 |};
 
-type ElementContext = {|
+export type ElementContext = {|
   el: HTMLElement;
   parents: Array<NodeTagPair>;
 |};
@@ -157,6 +159,7 @@ type LiveSetTransformer = (
 
 export default class PageParserTree {
   tree: TagTree<HTMLElement>;
+  _logError: (err: Error, el: ?HTMLElement) => void;
   _treeController: TagTreeController<HTMLElement>;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
@@ -173,6 +176,11 @@ export default class PageParserTree {
     }
 
     this._options = options;
+    this._logError = options.logError || function(err) {
+      setTimeout(() => {
+        throw err;
+      }, 0);
+    };
 
     this._tagOptions = new Map();
     const tags = [];
@@ -211,6 +219,36 @@ export default class PageParserTree {
       parents: [{tag: null, node: this.tree}]
     }])).liveSet;
     this._processSourceLiveSet(null, rootMatchedSet);
+
+    Object.keys(this._options.finders).forEach(tag => {
+      const {fn, interval} = this._options.finders[tag];
+
+      const nodesInTag = this.tree.getAllByTag(tag);
+
+      const runFinder = () => {
+        const els = fn(this.tree.getValue());
+        const elSet = new Set();
+
+        for (let i=0,len=els.length; i<len; i++) {
+          const el = els[i];
+          elSet.add(el);
+          if (this.tree.getNodesForValue(el).length === 0) {
+            this._logError(new Error(`page-parser-tree: Finder found element missed by watcher for tag: ${tag}`), el);
+          }
+        }
+
+        nodesInTag.values().forEach(node => {
+          const nodeValue = node.getValue();
+          if (!elSet.has(nodeValue)) {
+            this._logError(new Error(`page-parser-tree: Finder missed element seen by watcher for tag: ${tag}`), nodeValue);
+          }
+        });
+
+        setTimeout(runFinder, interval == null ? 5000 : interval);
+      };
+
+      setTimeout(runFinder, interval == null ? 5000 : interval);
+    });
   }
 
   _processSourceLiveSet(tag: null|string, liveSet: LiveSet<ElementContext>) {
@@ -235,7 +273,13 @@ export default class PageParserTree {
         return parent;
       };
 
+      // const elementsFoundByFinderForTag = this._elementsFoundByFinderByTag.get(tag);
+      // if (!elementsFoundByFinderForTag) throw new Error();
+
       const addItem = ec => {
+        // if (elementsFoundByFinderForTag.has(ec.el)) {
+        //
+        // }
         const parent = findParent(ec.parents);
         const node = this._treeController.addTaggedValue(parent, tag, ec.el);
         const newParents = ec.parents.concat([

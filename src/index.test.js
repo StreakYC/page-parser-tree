@@ -34,81 +34,85 @@ global.MutationObserver = class {
   }
 };
 
-if (!document.documentElement) throw new Error();
-document.documentElement.innerHTML = `
-<head></head>
-<body>
-  <nav>
-    <div>
-      <a>one</a>
-      <a>two</a>
-    </div>
-    <div>
-      <a>three</a>
-    </div>
-    <div>
+function setupPage() {
+  if (!document.documentElement) throw new Error();
+  document.documentElement.innerHTML = `
+  <head></head>
+  <body>
+    <nav>
+      <div>
+        <a>one</a>
+        <a>two</a>
+      </div>
+      <div>
+        <a>three</a>
+      </div>
       <div>
         <div>
-          <a href="blah">four</a>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div>
-        <div>
-          <a href="blah">five</a>
-        </div>
-      </div>
-    </div>
-  </nav>
-  <div class="page-outer">
-    <div>
-      <article>blah</article>
-    </div>
-    <div class="article-comments">
-      <div class="comment">
-        <div class="body">foo bar</div>
-        <div class="replies">
-          <div class="comment">
-            <div class="body">FIRST</div>
-            <div class="replies"></div>
+          <div>
+            <a href="blah">four</a>
           </div>
-          <div class="comment2">
-            <div class="comment2-inner">
-              <div class="body">SECOND</div>
-              <div class="replies">
-                <div class="comment">
-                  <div class="body">reply to second</div>
-                  <div class="replies">
-                    <div class="comment">
-                      <div class="body">reply to you</div>
-                      <div class="replies"></div>
+        </div>
+      </div>
+      <div>
+        <div>
+          <div>
+            <a href="blah">five</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="page-outer">
+      <div>
+        <article>blah</article>
+      </div>
+      <div class="article-comments">
+        <div class="comment">
+          <div class="body">foo bar</div>
+          <div class="replies">
+            <div class="comment">
+              <div class="body">FIRST</div>
+              <div class="replies"></div>
+            </div>
+            <div class="comment2">
+              <div class="comment2-inner">
+                <div class="body">SECOND</div>
+                <div class="replies">
+                  <div class="comment">
+                    <div class="body">reply to second</div>
+                    <div class="replies">
+                      <div class="comment">
+                        <div class="body">reply to you</div>
+                        <div class="replies"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="comment2">
-            <div class="comment2-inner">
-              <div class="body">THIRD</div>
-              <div class="replies"></div>
+            <div class="comment2">
+              <div class="comment2-inner">
+                <div class="body">THIRD</div>
+                <div class="replies"></div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="comment">
-        <div class="body">bar foo</div>
-        <div class="replies"></div>
+        <div class="comment">
+          <div class="body">bar foo</div>
+          <div class="replies"></div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="page-sidebar">
-    <div>thing</div>
-    <div>bar</div>
-  </div>
-</body>
-`;
+    <div class="page-sidebar">
+      <div>thing</div>
+      <div>bar</div>
+    </div>
+  </body>
+  `;
+}
+
+beforeEach(setupPage);
 
 function qs(el: HTMLElement, selector: string): HTMLElement {
   const result = el.querySelector(selector);
@@ -116,8 +120,10 @@ function qs(el: HTMLElement, selector: string): HTMLElement {
   return result;
 }
 
-test('sync test', async () => {
+xtest('watchers', async () => {
+  const logError = jest.fn();
   const page = new PageParserTree(document, {
+    logError,
     tags: {
       'comment': {ownedBy: ['comment']},
       'replySection': {ownedBy: ['comment']}
@@ -167,13 +173,7 @@ test('sync test', async () => {
         {$tag: 'replySection'}
       ]},
     ],
-    finders: {
-      comment: {
-        fn(root) {
-          return root.querySelectorAll('.comment, .comment2-inner');
-        }
-      },
-    }
+    finders: {}
   });
 
   expect(Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(x => x.getValue().outerHTML))
@@ -226,13 +226,296 @@ test('sync test', async () => {
       'bar foo'
     ]);
 
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
   expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
     ]);
+
+  expect(logError).toHaveBeenCalledTimes(0);
+});
+
+xtest('finders', async () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']}
+    },
+    watchers: [],
+    finders: {
+      comment: {
+        interval: 5,
+        fn(root) {
+          return root.querySelectorAll('.comment, .comment2-inner');
+        }
+      }
+    }
+  });
+
+  await delay(20);
+
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'FIRST',
+      'SECOND',
+      'THIRD',
+      'reply to second',
+      'reply to you'
+    ]);
+
+  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo'
+    ]);
+
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
+  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'FIRST',
+      'SECOND',
+      'THIRD'
+    ]);
+
+  {
+    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    foobarComment.getValue().remove();
+    ev(foobarCommentParentElement).emit('mutate', [{
+      addedNodes: [],
+      removedNodes: [foobarComment.getValue()]
+    }]);
+  }
+
+  await delay(20);
+
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+    ]);
+
+  expect(logError).toHaveBeenCalledTimes(0);
+});
+
+xtest('finder finding things watcher misses', async () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments',
+        {$tag: 'commentSection'}
+      ]},
+      {sources: ['commentSection', 'replySection'], selectors: [
+        '.comment', // Missing .comment2 handling
+        {$tag: 'comment'}
+      ]},
+      {sources: ['comment'], selectors: [
+        '.replies',
+        {$tag: 'replySection'}
+      ]},
+    ],
+    finders: {
+      comment: {
+        interval: 5,
+        fn(root) {
+          return root.querySelectorAll('.comment, .comment2-inner');
+        }
+      }
+    }
+  });
+
+  expect(logError).toHaveBeenCalledTimes(0);
+
+  await delay(20);
+
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'FIRST',
+      'SECOND',
+      'THIRD',
+      'reply to second',
+      'reply to you'
+    ]);
+
+  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo'
+    ]);
+
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
+  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'FIRST',
+      'SECOND',
+      'THIRD'
+    ]);
+
+  {
+    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    foobarComment.getValue().remove();
+    ev(foobarCommentParentElement).emit('mutate', [{
+      addedNodes: [],
+      removedNodes: [foobarComment.getValue()]
+    }]);
+  }
+
+  expect(logError).toHaveBeenCalledTimes(1);
+
+  await delay(20);
+
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+    ]);
+
+  expect(logError).toHaveBeenCalledTimes(1);
+});
+
+xtest('watcher finding things finder misses', async () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments',
+        {$tag: 'commentSection'}
+      ]},
+      {sources: ['commentSection', 'replySection'], selectors: [
+        {$or: [
+          [
+            '.comment'
+          ], [
+            '.comment2',
+            '.comment2-inner'
+          ]
+        ]},
+        {$tag: 'comment'}
+      ]},
+      {sources: ['comment'], selectors: [
+        '.replies',
+        {$tag: 'replySection'}
+      ]},
+    ],
+    finders: {
+      comment: {
+        interval: 5,
+        fn(root) {
+          return root.querySelectorAll('.comment'); // missing .comment2-inner
+        }
+      }
+    }
+  });
+
+  expect(logError).toHaveBeenCalledTimes(0);
+
+  await delay(20);
+
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'FIRST',
+      'SECOND',
+      'THIRD',
+      'reply to second',
+      'reply to you'
+    ]);
+
+  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'foo bar',
+      'bar foo'
+    ]);
+
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
+  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'FIRST',
+      'SECOND',
+      'THIRD'
+    ]);
+
+  {
+    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    foobarComment.getValue().remove();
+    ev(foobarCommentParentElement).emit('mutate', [{
+      addedNodes: [],
+      removedNodes: [foobarComment.getValue()]
+    }]);
+  }
+
+  expect(logError).toHaveBeenCalledTimes(1);
+
+  await delay(20);
+
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+      'bar foo'
+    ]);
+
+  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+    ]);
+
+  expect(logError).toHaveBeenCalledTimes(1);
 });
 
 describe('validation', () => {
-  test('ownedBy non-existent tag', () => {
+  xtest('ownedBy non-existent tag', () => {
     expect(() => new PageParserTree(document, {
       tags: {
         foo: {ownedBy: ['bar']}
