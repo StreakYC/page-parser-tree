@@ -4,6 +4,7 @@ import watcherFinderMerger from './watcherFinderMerger';
 
 import LiveSet from 'live-set';
 import {TagTree} from 'tag-tree';
+import delay from 'pdelay';
 
 function setupPage() {
   if (!document.documentElement) throw new Error();
@@ -167,4 +168,29 @@ test('read with good watcher and bad finder', () => {
   // Check that we don't logError for the same elements again
   output.values();
   expect(logError).toHaveBeenCalledTimes(2);
+});
+
+test('listen with watcher', async () => {
+  const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
+
+  const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
+  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, null, logError);
+
+  output.subscribe({next, complete});
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
+
+  for (let i=1; i<watcherValues.length; i++) {
+    controller.add(watcherValues[i]);
+    await delay(0);
+    expect(next.mock.calls[i-1].map(([{type, value}]) => [type, serializeEc(value)])).toEqual([
+      ['add', serializeEc(watcherValues[i])]
+    ]);
+    expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, i+1).map(serializeEc));
+  }
+
+  expect(logError).toHaveBeenCalledTimes(0);
+  expect(complete).toHaveBeenCalledTimes(0);
+  controller.end();
+  await delay(0);
+  expect(complete).toHaveBeenCalledTimes(1);
 });

@@ -76,8 +76,30 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
       }
       return s;
     },
-    listen(setValues, controller) { //eslint-disable-line
-      throw new Error('TODO');
+    listen(setValues, controller) {
+      if (!watcherSet) throw new Error('TODO support finder only');
+      const sub = watcherSet.subscribe({
+        start() {
+          if (!watcherSet) throw new Error();
+          setValues(watcherSet.values());
+        },
+        next(changes) {
+          changes.forEach(change => {
+            if (change.type === 'add') {
+              controller.add(change.value);
+            } else if (change.type === 'remove') {
+              controller.remove(change.value);
+            }
+          });
+        },
+        error(err) {
+          controller.error(err);
+        },
+        complete() {
+          controller.end();
+        }
+      });
+      return sub;
     }
   });
 }
