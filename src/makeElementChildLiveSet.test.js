@@ -29,7 +29,7 @@ test('listen', async () => {
   liveSet.subscribe({next});
 
   div.appendChild(divB);
-  emitMutation(div, {addedNodes: [divB], removedNodes: []});
+  emitMutation(div, {addedNodes: [divB]});
   expect(next).toHaveBeenCalledTimes(0);
   await delay(0);
   expect(Array.from(liveSet.values()).map(tagAndClassName)).toEqual([
@@ -51,7 +51,7 @@ test('listen, pullChanges', async () => {
   const sub = liveSet.subscribe({next});
 
   div.appendChild(divB);
-  emitMutation(div, {addedNodes: [divB], removedNodes: []});
+  emitMutation(div, {addedNodes: [divB]});
   expect(Array.from(liveSet.values()).map(tagAndClassName)).toEqual([
     divA, divB
   ].map(tagAndClassName));

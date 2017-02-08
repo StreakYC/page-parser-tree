@@ -5,6 +5,7 @@ import watcherFinderMerger from './watcherFinderMerger';
 import LiveSet from 'live-set';
 import {TagTree} from 'tag-tree';
 import delay from 'pdelay';
+import tagAndClassName from '../testlib/tagAndClassName';
 
 function setupPage() {
   if (!document.documentElement) throw new Error();
@@ -40,10 +41,6 @@ function setupPage() {
 }
 
 setupPage();
-
-function tagAndClassName(el: ?HTMLElement): string {
-  return el ? el.nodeName.toLowerCase()+Array.from(el.classList).map(c => '.'+c).join('') : '<null>';
-}
 
 function serializeEc(ec) {
   return [tagAndClassName(ec.el), ec.parents.map(({tag, node}) => ({tag, el: tagAndClassName(node.getValue())}))];
