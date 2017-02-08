@@ -182,8 +182,8 @@ test('listen with watcher', async () => {
   for (let i=1; i<watcherValues.length; i++) {
     controller.add(watcherValues[i]);
     await delay(0);
-    expect(next.mock.calls[i-1].map(([{type, value}]) => [type, serializeEc(value)])).toEqual([
-      ['add', serializeEc(watcherValues[i])]
+    expect(next.mock.calls.slice(i-1, i).map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+      watcherValues.slice(i, i+1).map(ec => ['add', serializeEc(ec)])
     ]);
     expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, i+1).map(serializeEc));
   }
@@ -193,4 +193,167 @@ test('listen with watcher', async () => {
   controller.end();
   await delay(0);
   expect(complete).toHaveBeenCalledTimes(1);
+});
+
+test('listen with finder', async () => {
+  const finder = {
+    interval: 20,
+    fn(root) {
+      return root.querySelectorAll('.comment');
+    }
+  };
+
+  const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
+  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, null, finder, logError);
+
+  output.subscribe({next, complete});
+  expect(Array.from(output.values()).map(serializeEc)).toEqual([]);
+
+  await delay(50);
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.map(serializeEc));
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    watcherValues.map(ec => ['add', serializeEc(ec)])
+  ]);
+  expect(logError).toHaveBeenCalledTimes(0);
+
+  const commentA1parent = commentA1.parentElement;
+  if (!commentA1parent) throw new Error();
+  commentA1.remove();
+
+  await delay(50);
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    watcherValues.map(ec => ['add', serializeEc(ec)]),
+    [['remove', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]]
+  ]);
+  expect(logError).toHaveBeenCalledTimes(0);
+
+  commentA1parent.appendChild(commentA1);
+  await delay(50);
+
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    watcherValues.map(ec => ['add', serializeEc(ec)]),
+    [['remove', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]],
+    [['add', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]]
+  ]);
+  expect(logError).toHaveBeenCalledTimes(0);
+});
+
+test('listen with consistent watcher and finder', async () => {
+  const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
+
+  const finder = {
+    interval: 20,
+    fn(root) {
+      return root.querySelectorAll('.comment');
+    }
+  };
+
+  const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
+  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+
+  output.subscribe({next, complete});
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
+
+  await delay(5);
+  watcherValues.slice(1).forEach(ec => {
+    controller.add(ec);
+  });
+
+  await delay(50);
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.map(serializeEc));
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
+  ]);
+  expect(logError).toHaveBeenCalledTimes(0);
+});
+
+test('listen with bad watcher and good finder', async () => {
+  const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
+
+  const finder = {
+    interval: 20,
+    fn(root) {
+      return root.querySelectorAll('.comment');
+    }
+  };
+
+  const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
+  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+
+  output.subscribe({next, complete});
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
+
+  await delay(5);
+  watcherValues.slice(2 /* skip 1 */).forEach(ec => {
+    controller.add(ec);
+  });
+
+  await delay(50);
+  const reorderedWatcherValues = watcherValues.slice(0, 1).concat(watcherValues.slice(2), watcherValues.slice(1, 2));
+
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(reorderedWatcherValues.map(serializeEc));
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    reorderedWatcherValues.slice(1, 3).map(ec => ['add', serializeEc(ec)]),
+    reorderedWatcherValues.slice(3).map(ec => ['add', serializeEc(ec)])
+  ]);
+  expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
+    ['finder found element missed by watcher', 'div.comment.a1'],
+  ]);
+
+  const commentA1parent = commentA1.parentElement;
+  if (!commentA1parent) throw new Error();
+  commentA1.remove();
+
+  await delay(50);
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    reorderedWatcherValues.slice(1, 3).map(ec => ['add', serializeEc(ec)]),
+    reorderedWatcherValues.slice(3).map(ec => ['add', serializeEc(ec)]),
+    [['remove', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]]
+  ]);
+  expect(logError).toHaveBeenCalledTimes(1);
+
+  commentA1parent.appendChild(commentA1);
+  await delay(50);
+
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    reorderedWatcherValues.slice(1, 3).map(ec => ['add', serializeEc(ec)]),
+    reorderedWatcherValues.slice(3).map(ec => ['add', serializeEc(ec)]),
+    [['remove', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]],
+    [['add', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]]
+  ]);
+  expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
+    ['finder found element missed by watcher', 'div.comment.a1'],
+    ['finder found element missed by watcher', 'div.comment.a1'],
+  ]);
+});
+
+test('listen with good watcher and bad finder', async () => {
+  const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
+
+  const finder = {
+    interval: 20,
+    fn(root) {
+      return root.querySelectorAll('.comment:not(.a1)');
+    }
+  };
+
+  const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
+  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+
+  output.subscribe({next, complete});
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
+
+  await delay(5);
+  watcherValues.slice(1).forEach(ec => {
+    controller.add(ec);
+  });
+
+  await delay(50);
+  expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.map(serializeEc));
+  expect(next.mock.calls.map(([changes]) => changes.map(({type, value}) => [type, serializeEc(value)]))).toEqual([
+    watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
+  ]);
+  expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
+    ['watcher found element missed by finder', 'div.comment.a1'],
+  ]);
 });
