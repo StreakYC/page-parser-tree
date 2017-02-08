@@ -9,15 +9,23 @@ export default function makeElementChildLiveSet(element: HTMLElement): LiveSet<H
     },
     listen(setValues, controller) {
       setValues(this.read());
-      const observer = new MutationObserver(mutations => {
+
+      function changesHandler(mutations) {
         mutations.forEach(mutation => {
           Array.prototype.forEach.call(mutation.addedNodes, el => controller.add(el));
           Array.prototype.forEach.call(mutation.removedNodes, el => controller.remove(el));
         });
-      });
+      }
+      const observer = new MutationObserver(changesHandler);
       observer.observe(element, {childList: true});
-      return () => {
-        observer.disconnect();
+
+      return {
+        unsubscribe() {
+          observer.disconnect();
+        },
+        pullChanges() {
+          changesHandler(observer.takeRecords());
+        }
       };
     }
   });
