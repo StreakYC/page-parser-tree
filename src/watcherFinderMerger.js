@@ -75,16 +75,22 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
               if (change.type === 'add') {
                 const {el} = change.value;
                 watcherFoundElements.add(el);
-                currentElements.add(el);
-                currentElementContexts.add(change.value);
-                controller.add(change.value);
+                if (currentElements.has(el)) {
+                  logError(new Error('watcher found element already found by finder'), el);
+                } else {
+                  currentElements.add(el);
+                  currentElementContexts.add(change.value);
+                  controller.add(change.value);
+                }
               } else if (change.type === 'remove') {
                 const {el} = change.value;
                 watcherFoundElements.delete(el);
                 watcherFoundElementsMissedByFinder.delete(el);
-                currentElements.delete(el);
-                currentElementContexts.add(change.value);
-                controller.remove(change.value);
+                if (currentElementContexts.has(change.value)) {
+                  currentElements.delete(el);
+                  currentElementContexts.add(change.value);
+                  controller.remove(change.value);
+                } // else the ec was added by finder and it will deal with this
               }
             });
           },
