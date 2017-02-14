@@ -2,7 +2,7 @@
 
 import t from 'transducers.js';
 import LiveSet from 'live-set';
-import type {LiveSetSubscription} from 'live-set';
+import type {LiveSetController, LiveSetSubscription} from 'live-set';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetMerge from 'live-set/merge';
 import liveSetFilter from 'live-set/filter';
@@ -46,14 +46,11 @@ export type Selector =
   | {| $log: string |}
   // The $log operator uses `console.log` to log every element in the matched
   // set to the console with a given string prefix.
-
-  | {| $tag: string |}
-  // The $tag operator tags all elements currently in the matched set as the
-  // given tag.
 ;
 
 export type Watcher = {|
   sources: Array<string|null>;
+  tag: string;
   selectors: Array<Selector>;
 |};
 
@@ -95,36 +92,22 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
         );
         return liveSetTransduce(makeElementChildLiveSet(ec.el), transducer);
       };
-      return (liveSet) => liveSetFlatMap(liveSet, flatMapFn);
-    } else if (item.$tag) {
-      const {$tag} = item;
-      return (liveSet, addSubscription, addTaggedLiveSet) => {
-        return addTaggedLiveSet($tag, liveSet);
-      };
+      return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$or) {
       const transformers = item.$or.map(makeLiveSetTransformer);
-      return (liveSet, addSubscription, addTaggedLiveSet) =>
+      return liveSet =>
         liveSetMerge(transformers.map(transformer =>
-          transformer(liveSet, addSubscription, addTaggedLiveSet)
+          transformer(liveSet)
         ));
     } else if (item.$watch) {
       throw new Error('TODO');
     } else if (item.$log) {
       const {$log} = item;
-      const perItem = (ec) => {
-        console.log($log, ec.el); //eslint-disable-line no-console
+      const filterFn = value => {
+        console.log($log, value.el); //eslint-disable-line no-console
+        return true;
       };
-      return (liveSet, addSubscription) => {
-        addSubscription(liveSet.subscribe(changes => {
-          changes.forEach(change => {
-            if (change.type === 'add') {
-              perItem(change.value);
-            }
-          });
-        }));
-        liveSet.values().forEach(perItem);
-        return liveSet;
-      };
+      return liveSet => liveSetFilter(liveSet, filterFn);
     } else if (item.$filter) {
       const {$filter} = item;
       const filterFn = ({el}) => $filter(el);
@@ -141,26 +124,24 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
   });
 
   return transformers.reduce((combined, transformer) => {
-    return (liveSet, addSubscription, addTaggedLiveSet) => {
-      return transformer(
-        combined(liveSet, addSubscription, addTaggedLiveSet),
-        addSubscription,
-        addTaggedLiveSet
-      );
-    };
-  });
+    return liveSet => transformer(combined(liveSet));
+  }, x => x);
 }
 
-type LiveSetTransformer = (
-  liveSet: LiveSet<ElementContext>,
-  addSubscription: (sub: LiveSetSubscription) => void,
-  addTaggedLiveSet: (tag: string, taggedLiveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>
-) => LiveSet<ElementContext>;
+type LiveSetTransformer = (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>;
 
 export default class PageParserTree {
   tree: TagTree<HTMLElement>;
-  _logError: (err: Error, el: ?HTMLElement) => void;
   _treeController: TagTreeController<HTMLElement>;
+
+  _rootMatchedSet: LiveSet<ElementContext>;
+  _ecSources: Map<string, {
+    liveSet: LiveSet<LiveSet<ElementContext>>;
+    controller: LiveSetController<LiveSet<ElementContext>>;
+    ecSet: LiveSet<ElementContext>;
+  }>;
+
+  _logError: (err: Error, el: ?HTMLElement) => void;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
   _watcherLiveSetTransformers: Map<Array<Selector>, LiveSetTransformer>;
@@ -191,15 +172,11 @@ export default class PageParserTree {
       this._tagOptions.set(tag, tagOptions);
     });
     this._options.watchers.forEach(watcher => {
-      watcher.selectors.forEach(item => {
-        if (typeof item === 'object' && item.$tag) {
-          const {$tag} = item;
-          if (!this._tagOptions.has($tag)) {
-            this._tagOptions.set($tag, {});
-            tags.push({tag: $tag});
-          }
-        }
-      });
+      const {tag} = watcher;
+      if (!this._tagOptions.has(tag)) {
+        this._tagOptions.set(tag, {});
+        tags.push({tag});
+      }
     });
 
     this.tree = new TagTree({
@@ -214,134 +191,84 @@ export default class PageParserTree {
         [selectors, makeLiveSetTransformer(selectors)]
       )
     );
-    const rootMatchedSet = LiveSet.active(new Set([{
+    this._rootMatchedSet = LiveSet.constant(new Set([{
       el: this.tree.getValue(),
       parents: [{tag: null, node: this.tree}]
-    }])).liveSet;
-    this._processSourceLiveSet(null, rootMatchedSet);
+    }]));
 
-    Object.keys(this._options.finders).forEach(tag => {
-      const {fn, interval} = this._options.finders[tag];
+    this._ecSources = new Map(tags.map(({tag}) => {
+      const {liveSet, controller} = LiveSet.active();
+      const ecSet = liveSetFlatMap(liveSet, s => s);
+      return [tag, {liveSet, controller, ecSet}];
+    }));
 
-      const nodesInTag = this.tree.getAllByTag(tag);
+    this._options.watchers.forEach(({sources, selectors, tag}) => {
+      const tagOptions = this._tagOptions.get(tag);
+      if (!tagOptions) throw new Error();
+      const ownedBy = new Set(tagOptions.ownedBy || []);
 
-      const runFinder = () => {
-        const els = fn(this.tree.getValue());
-        const elSet = new Set();
-
-        for (let i=0,len=els.length; i<len; i++) {
-          const el = els[i];
-          elSet.add(el);
-          if (this.tree.getNodesForValue(el).length === 0) {
-            this._logError(new Error(`page-parser-tree: Finder found element missed by watcher for tag: ${tag}`), el);
+      function findParentNode(taggedParents: NodeTagPair[]): TagTreeNode<HTMLElement> {
+        let parentNode;
+        for (let i=taggedParents.length-1; i>=0; i--) {
+          if (taggedParents[i].tag == null || ownedBy.has(taggedParents[i].tag)) {
+            parentNode = taggedParents[i].node;
+            break;
           }
         }
-
-        nodesInTag.values().forEach(node => {
-          const nodeValue = node.getValue();
-          if (!elSet.has(nodeValue)) {
-            this._logError(new Error(`page-parser-tree: Finder missed element seen by watcher for tag: ${tag}`), nodeValue);
-          }
-        });
-
-        setTimeout(runFinder, interval == null ? 5000 : interval);
-      };
-
-      setTimeout(runFinder, interval == null ? 5000 : interval);
-    });
-  }
-
-  _processSourceLiveSet(tag: null|string, liveSet: LiveSet<ElementContext>) {
-    const addSubscription = (sub: LiveSetSubscription) => {
-      this._subscriptions.push(sub);
-    };
-
-    const addTaggedLiveSet = (tag, taggedLiveSet) => {
-      const findParent = parents => {
-        const entry = this._tagOptions.get(tag);
-        if (!entry) throw new Error('unknown tag: '+tag);
-        const {ownedBy} = entry;
-        let parent = parents[0].node;
-        if (ownedBy) {
-          for (let i=parents.length-1; i>=1; i--) {
-            if ((ownedBy:any).indexOf(parents[i].tag) >= 0) {
-              parent = parents[i].node;
-              break;
-            }
-          }
-        }
-        return parent;
-      };
-
-      // const elementsFoundByFinderForTag = this._elementsFoundByFinderByTag.get(tag);
-      // if (!elementsFoundByFinderForTag) throw new Error();
-
-      const addItem = ec => {
-        // if (elementsFoundByFinderForTag.has(ec.el)) {
-        //
-        // }
-        const parent = findParent(ec.parents);
-        const node = this._treeController.addTaggedValue(parent, tag, ec.el);
-        const newParents = ec.parents.concat([
-          {tag, node}
-        ]);
-        const newEc = {el: ec.el, parents: newParents};
-        return newEc;
-      };
-
-      const mappedTls = liveSetMap(taggedLiveSet, addItem);
-
-      let sub;
-      let gotFirstItem = false;
-
-      mappedTls.subscribe({
-        start: _sub => {
-          sub = _sub;
-          this._subscriptions.push(sub);
-        },
-        next: changes => {
-          if (!gotFirstItem) {
-            gotFirstItem = true;
-            this._processSourceLiveSet(tag, mappedTls);
-          }
-
-          changes.forEach(change => {
-            if (change.type === 'remove') {
-              const ec = change.value;
-              const node = ec.parents[ec.parents.length-1].node;
-
-              // The node might have already been removed from the tree if it
-              // is owned by a node that was just removed.
-              const nodeParent = node.getParent();
-              if (nodeParent && nodeParent.ownsNode(node)) {
-                const parent = findParent(ec.parents.slice(0, -1));
-                this._treeController.removeTaggedNode(parent, tag, node);
-              }
-            }
-          });
-        },
-        complete: () => {
-          const ix = this._subscriptions.indexOf(sub);
-          if (ix < 0) throw new Error();
-          this._subscriptions.splice(ix, 1);
-        }
-      });
-
-      if (!gotFirstItem && mappedTls.values().size) {
-        gotFirstItem = true;
-        this._processSourceLiveSet(tag, mappedTls);
+        if (!parentNode) throw new Error();
+        return parentNode;
       }
 
-      return mappedTls;
-    };
-
-    this._options.watchers
-      .filter(({sources}) => sources.indexOf(tag) >= 0)
-      .forEach(({selectors}) => {
-        const transformer = this._watcherLiveSetTransformers.get(selectors);
-        if (!transformer) throw new Error();
-        transformer(liveSet, addSubscription, addTaggedLiveSet);
+      const sourceSets = sources.map(tag => {
+        if (!tag) return this._rootMatchedSet;
+        const entry = this._ecSources.get(tag);
+        if (!entry) throw new Error('Unknown source: '+tag);
+        return entry.ecSet;
       });
+      const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
+      const transformer = this._watcherLiveSetTransformers.get(selectors);
+      if (!transformer) throw new Error();
+
+      const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
+
+      const outputSet = liveSetMap(transformer(sourceSet), ec => {
+        const {el, parents} = ec;
+        const parentNode = findParentNode(parents);
+        const node = this._treeController.addTaggedValue(parentNode, tag, el);
+        if (elementsToNodes.has(el)) {
+          throw new Error('received element twice'); // TODO logError
+        }
+        elementsToNodes.set(el, node);
+
+        const newParents = ec.parents.concat([{tag, node}]);
+        return {el, parents: newParents};
+      });
+
+      this._subscriptions.push(outputSet.subscribe(changes => {
+        changes.forEach(change => {
+          if (change.type === 'remove') {
+            const node = elementsToNodes.get(change.value.el);
+            if (!node) throw new Error('Should not happen: received removal of unseen element');
+            elementsToNodes.delete(change.value.el);
+            const nodeParent = node.getParent();
+
+            // The node might have already been removed from the tree if it
+            // is owned by a node that was just removed.
+            if (nodeParent && nodeParent.ownsNode(node)) {
+              this._treeController.removeTaggedNode(nodeParent, tag, node);
+            }
+          }
+        });
+      }));
+
+      const ecEntry = this._ecSources.get(tag);
+      if (!ecEntry) throw new Error();
+      ecEntry.controller.add(outputSet);
+    });
+
+    this._subscriptions.forEach(sub => {
+      sub.pullChanges();
+    });
   }
 
   //TODO
