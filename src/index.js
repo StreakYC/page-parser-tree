@@ -13,6 +13,7 @@ import type {TagTreeController, TagTreeNode} from 'tag-tree';
 import matchesSelector from 'matches-selector-ng';
 
 import makeElementChildLiveSet from './makeElementChildLiveSet';
+import watcherFinderMerger from './watcherFinderMerger';
 
 export type Selector =
   string
@@ -196,16 +197,26 @@ export default class PageParserTree {
       parents: [{tag: null, node: this.tree}]
     }]));
 
-    this._ecSources = new Map(tags.map(({tag}) => {
-      const {liveSet, controller} = LiveSet.active();
-      const ecSet = liveSetFlatMap(liveSet, s => s);
-      return [tag, {liveSet, controller, ecSet}];
-    }));
+    const tagsWithWatchers = new Set();
+    this._options.watchers.forEach(watcher => {
+      tagsWithWatchers.add(watcher.tag);
+    });
 
-    this._options.watchers.forEach(({sources, selectors, tag}) => {
+    this._ecSources = new Map(tags.map(({tag}) => {
       const tagOptions = this._tagOptions.get(tag);
       if (!tagOptions) throw new Error();
       const ownedBy = new Set(tagOptions.ownedBy || []);
+
+      const {liveSet, controller} = LiveSet.active();
+      const combinedWatcherSet = tagsWithWatchers.has(tag) ?
+        liveSetFlatMap(liveSet, s => s) : null;
+      const finder = this._options.finders[tag];
+      const ecsToTag = finder ?
+        watcherFinderMerger(
+          this.tree, tagOptions, combinedWatcherSet, finder, this._logError
+        ) : combinedWatcherSet || LiveSet.constant(new Set());
+
+      const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
 
       function findParentNode(taggedParents: NodeTagPair[]): TagTreeNode<HTMLElement> {
         let parentNode;
@@ -219,24 +230,12 @@ export default class PageParserTree {
         return parentNode;
       }
 
-      const sourceSets = sources.map(tag => {
-        if (!tag) return this._rootMatchedSet;
-        const entry = this._ecSources.get(tag);
-        if (!entry) throw new Error('Unknown source: '+tag);
-        return entry.ecSet;
-      });
-      const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
-      const transformer = this._watcherLiveSetTransformers.get(selectors);
-      if (!transformer) throw new Error();
-
-      const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
-
-      const outputSet = liveSetMap(transformer(sourceSet), ec => {
+      const ecSet = liveSetMap(ecsToTag, ec => {
         const {el, parents} = ec;
         const parentNode = findParentNode(parents);
         const node = this._treeController.addTaggedValue(parentNode, tag, el);
         if (elementsToNodes.has(el)) {
-          throw new Error('received element twice'); // TODO logError
+          this._logError(new Error('Watcher received element twice'), el);
         }
         elementsToNodes.set(el, node);
 
@@ -244,7 +243,7 @@ export default class PageParserTree {
         return {el, parents: newParents};
       });
 
-      this._subscriptions.push(outputSet.subscribe(changes => {
+      this._subscriptions.push(ecSet.subscribe(changes => {
         changes.forEach(change => {
           if (change.type === 'remove') {
             const node = elementsToNodes.get(change.value.el);
@@ -261,9 +260,23 @@ export default class PageParserTree {
         });
       }));
 
+      return [tag, {liveSet, controller, ecSet}];
+    }));
+
+    this._options.watchers.forEach(({sources, selectors, tag}) => {
+      const sourceSets = sources.map(tag => {
+        if (!tag) return this._rootMatchedSet;
+        const entry = this._ecSources.get(tag);
+        if (!entry) throw new Error('Unknown source: '+tag);
+        return entry.ecSet;
+      });
+      const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
+      const transformer = this._watcherLiveSetTransformers.get(selectors);
+      if (!transformer) throw new Error();
+
       const ecEntry = this._ecSources.get(tag);
       if (!ecEntry) throw new Error();
-      ecEntry.controller.add(outputSet);
+      ecEntry.controller.add(transformer(sourceSet));
     });
 
     this._subscriptions.forEach(sub => {

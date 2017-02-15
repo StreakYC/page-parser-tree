@@ -6,6 +6,7 @@ import type {TagTreeNode} from 'tag-tree';
 import delay from 'pdelay';
 
 import emitMutation from '../testlib/MockMutationObserver';
+import tagAndClassName from '../testlib/tagAndClassName';
 
 function setupPage() {
   if (!document.documentElement) throw new Error();
@@ -87,6 +88,10 @@ function setupPage() {
 
 beforeEach(setupPage);
 
+function logErrorSummary([err, el]) {
+  return [err.message, tagAndClassName(el), el.querySelector('.body').textContent];
+}
+
 function qs(el: HTMLElement, selector: string): HTMLElement {
   const result = el.querySelector(selector);
   if (!result) throw new Error(`Selector failed to find element: ${selector}`);
@@ -128,10 +133,10 @@ test('watchers', async () => {
       {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
         {$or: [
           [
-            '.comment'
-          ], [
             '.comment2',
             '.comment2-inner'
+          ], [
+            '.comment'
           ]
         ]}
       ]},
@@ -203,7 +208,7 @@ test('watchers', async () => {
   expect(logError).toHaveBeenCalledTimes(0);
 });
 
-xtest('finders', async () => {
+test('finders', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
     logError,
@@ -227,12 +232,12 @@ xtest('finders', async () => {
   expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
       'foo bar',
-      'bar foo',
       'FIRST',
       'SECOND',
-      'THIRD',
       'reply to second',
-      'reply to you'
+      'reply to you',
+      'THIRD',
+      'bar foo'
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
@@ -279,7 +284,7 @@ xtest('finders', async () => {
   expect(logError).toHaveBeenCalledTimes(0);
 });
 
-xtest('finder finding things watcher misses', async () => {
+test('finder finding things watcher misses', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
     logError,
@@ -313,6 +318,12 @@ xtest('finder finding things watcher misses', async () => {
 
   await delay(20);
 
+  const expectedErrorsSummary = [
+    ['finder found element missed by watcher', 'div.comment2-inner', 'SECOND'],
+    ['finder found element missed by watcher', 'div.comment2-inner', 'THIRD'],
+  ];
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
   expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
@@ -320,9 +331,9 @@ xtest('finder finding things watcher misses', async () => {
       'bar foo',
       'FIRST',
       'SECOND',
-      'THIRD',
       'reply to second',
-      'reply to you'
+      'reply to you',
+      'THIRD'
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
@@ -351,7 +362,6 @@ xtest('finder finding things watcher misses', async () => {
   }
 
   await delay(20);
-  expect(logError).toHaveBeenCalledTimes(1);
 
   expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
@@ -367,10 +377,10 @@ xtest('finder finding things watcher misses', async () => {
     .toEqual([
     ]);
 
-  expect(logError).toHaveBeenCalledTimes(1);
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
 });
 
-xtest('watcher finding things finder misses', async () => {
+test('watcher finding things finder misses', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
     logError,
@@ -416,9 +426,9 @@ xtest('watcher finding things finder misses', async () => {
     .toEqual([
       'foo bar',
       'bar foo',
+      'FIRST',
       'SECOND',
       'THIRD',
-      'FIRST',
       'reply to second',
       'reply to you'
     ]);
@@ -435,9 +445,9 @@ xtest('watcher finding things finder misses', async () => {
 
   expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
-      'SECOND',
-      'THIRD',
       'FIRST',
+      'SECOND',
+      'THIRD'
     ]);
 
   {
@@ -449,7 +459,6 @@ xtest('watcher finding things finder misses', async () => {
   }
 
   await delay(20);
-  expect(logError).toHaveBeenCalledTimes(1);
 
   expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
     .toEqual([
@@ -465,7 +474,11 @@ xtest('watcher finding things finder misses', async () => {
     .toEqual([
     ]);
 
-  expect(logError).toHaveBeenCalledTimes(1);
+  const expectedErrorsSummary = [
+    ['watcher found element missed by finder', 'div.comment2-inner', 'SECOND'],
+    ['watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
+  ];
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
 });
 
 describe('validation', () => {

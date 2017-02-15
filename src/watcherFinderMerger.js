@@ -88,7 +88,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
                 watcherFoundElementsMissedByFinder.delete(el);
                 if (currentElementContexts.has(change.value)) {
                   currentElements.delete(el);
-                  currentElementContexts.add(change.value);
+                  currentElementContexts.delete(change.value);
                   controller.remove(change.value);
                 } // else the ec was added by finder and it will deal with this
               }
@@ -112,7 +112,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
         interval = setInterval(() => {
           const finderRunFoundElements = new Set();
           const found = _finder.fn(tagTree.getValue());
-          for (let i=0,len=found.length; i<len; i++) {
+          for (let i=0, len=found.length; i<len; i++) {
             const el = found[i];
             finderRunFoundElements.add(el);
             if (!currentElements.has(el)) {
@@ -122,6 +122,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
               controller.add(ec);
               if (watcherSet) {
                 logError(new Error('finder found element missed by watcher'), el);
+                if (sub) sub.pullChanges();
               }
             }
           }
@@ -138,6 +139,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
                 currentElementContexts.delete(ec);
                 currentElements.delete(el);
                 controller.remove(ec);
+                if (sub) sub.pullChanges();
               }
             }
           });
@@ -158,25 +160,40 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
 }
 
 function makeElementContext(el: HTMLElement, tagTree: TagTree<HTMLElement>, ownedBy: string[]): ElementContext {
-  const root = tagTree.getValue();
-  const parents = [];
+  // Don't compute parents until it's read from.
+  // This is important because nodes aren't added to the tag tree until
+  // PageParserTree iterates over the results, and some of these nodes may be
+  // owned by each other.
+  let _cachedParents = null;
+  return {
+    el,
+    // Hide the getter from Flow because it doesn't support getters yet.
+    /*:: parents: [] || ` */ get parents() /*:: `||function() */ {
+      if (!_cachedParents) {
+        const root = tagTree.getValue();
+        const parents = [];
 
-  let current = el.parentElement;
-  while (current) {
-    const tagTreeNodes = tagTree.getNodesForValue((current:any));
-    for (let i=0,len=tagTreeNodes.length; i<len; i++) {
-      const node = tagTreeNodes[i];
-      const tag = node.getTag();
-      if (tag == null || ownedBy.indexOf(tag) >= 0) {
-        parents.push({tag, node});
-        break;
+        let current = el.parentElement;
+        while (current) {
+          const tagTreeNodes = tagTree.getNodesForValue((current:any));
+          for (let i=0,len=tagTreeNodes.length; i<len; i++) {
+            const node = tagTreeNodes[i];
+            const tag = node.getTag();
+            if (tag == null || ownedBy.indexOf(tag) >= 0) {
+              parents.push({tag, node});
+              break;
+            }
+          }
+
+          if (current === root) break;
+          current = current.parentElement;
+        }
+
+        parents.reverse();
+
+        _cachedParents = parents;
       }
+      return _cachedParents;
     }
-
-    if (current === root) break;
-    current = current.parentElement;
-  }
-
-  parents.reverse();
-  return {el, parents};
+  };
 }
