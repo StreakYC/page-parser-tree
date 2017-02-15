@@ -1,6 +1,6 @@
 {
   "name": "page-parser-tree",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Create a TagTree of named elements out of an HTML page",
   "main": "js/index.js",
   "scripts": {
