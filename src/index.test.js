@@ -89,7 +89,9 @@ function setupPage() {
 beforeEach(setupPage);
 
 function logErrorSummary([err, el]) {
-  return [err.message, tagAndClassName(el), el.querySelector('.body').textContent];
+  const bodyEl = el.querySelector('.body');
+  const content = bodyEl ? bodyEl.textContent : el.outerHTML;
+  return [err.message, tagAndClassName(el), content];
 }
 
 function qs(el: HTMLElement, selector: string): HTMLElement {
@@ -146,6 +148,8 @@ test('watchers', async () => {
     ],
     finders: {}
   });
+
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
   expect(Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(x => x.getValue().outerHTML))
     .toEqual([
@@ -205,7 +209,7 @@ test('watchers', async () => {
     .toEqual([
     ]);
 
-  expect(logError).toHaveBeenCalledTimes(0);
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 });
 
 test('finders', async () => {
