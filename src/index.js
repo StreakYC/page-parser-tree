@@ -172,13 +172,14 @@ export default class PageParserTree {
       tags.push({tag, ownedBy});
       this._tagOptions.set(tag, tagOptions);
     });
-    this._options.watchers.forEach(watcher => {
-      const {tag} = watcher;
-      if (!this._tagOptions.has(tag)) {
-        this._tagOptions.set(tag, {});
-        tags.push({tag});
-      }
-    });
+    Object.keys(this._options.finders)
+      .concat(this._options.watchers.map(w => w.tag))
+      .forEach(tag => {
+        if (!this._tagOptions.has(tag)) {
+          this._tagOptions.set(tag, {});
+          tags.push({tag});
+        }
+      });
 
     this.tree = new TagTree({
       root: rootEl,

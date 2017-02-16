@@ -288,6 +288,40 @@ test('finders', async () => {
   expect(logError).toHaveBeenCalledTimes(0);
 });
 
+test('watchers and finders for separate tags', async () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {},
+    finders: {
+      topnav: {
+        interval: 5,
+        fn(root) {
+          return root.querySelectorAll('nav');
+        }
+      }
+    },
+    watchers: [
+      {sources: ['topnav'], tag: 'navLink', selectors: [
+        'div',
+        'a'
+      ]},
+    ]
+  });
+  const allTopNav = page.tree.getAllByTag('topnav');
+  const allNavLinks = page.tree.getAllByTag('navLink');
+
+  expect(allTopNav.values().size).toBe(0);
+  expect(allNavLinks.values().size).toBe(0);
+
+  await new Promise((resolve, reject) => {
+    allTopNav.subscribe({next: resolve, error: reject});
+  });
+
+  expect(allTopNav.values().size).toBe(1);
+  expect(allNavLinks.values().size).toBe(3);
+});
+
 test('finder finding things watcher misses', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
