@@ -81,7 +81,7 @@ export type ElementContext = {|
   parents: Array<NodeTagPair>;
 |};
 
-function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer {
+function makeLiveSetTransformer(selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const itemString = item;
@@ -129,8 +129,6 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
   }, x => x);
 }
 
-type LiveSetTransformer = (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>;
-
 function makeTagOptions(options: PageParserTreeOptions) {
   const map = new Map();
   const list = [];
@@ -165,7 +163,6 @@ export default class PageParserTree {
   _logError: (err: Error, el: ?HTMLElement) => void;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
-  _watcherLiveSetTransformers: Map<Array<Selector>, LiveSetTransformer>;
   _subscriptions: Array<LiveSetSubscription> = [];
 
   constructor(root: Document|HTMLElement, options: PageParserTreeOptions) {
@@ -194,11 +191,6 @@ export default class PageParserTree {
         this._treeController = controller;
       }
     });
-    this._watcherLiveSetTransformers = new Map(
-      this._options.watchers.map(({selectors}) =>
-        [selectors, makeLiveSetTransformer(selectors)]
-      )
-    );
     this._rootMatchedSet = LiveSet.constant(new Set([{
       el: this.tree.getValue(),
       parents: [{tag: null, node: this.tree}]
@@ -278,8 +270,7 @@ export default class PageParserTree {
         return entry.ecSet;
       });
       const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
-      const transformer = this._watcherLiveSetTransformers.get(selectors);
-      if (!transformer) throw new Error();
+      const transformer = makeLiveSetTransformer(selectors);
 
       const ecEntry = this._ecSources.get(tag);
       if (!ecEntry) throw new Error();
