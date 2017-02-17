@@ -100,6 +100,10 @@ function qs(el: HTMLElement, selector: string): HTMLElement {
   return result;
 }
 
+function getCommentNodeTextValue(node) {
+  return qs(node.getValue(), '.body').textContent;
+}
+
 test('watchers', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
@@ -157,7 +161,7 @@ test('watchers', async () => {
     ]);
 
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo',
@@ -169,7 +173,7 @@ test('watchers', async () => {
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo'
@@ -178,7 +182,7 @@ test('watchers', async () => {
   const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
   const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'SECOND',
       'THIRD',
@@ -195,17 +199,17 @@ test('watchers', async () => {
 
   await delay(0);
 
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
@@ -215,11 +219,11 @@ test('watchers', async () => {
 
   page.dump();
 
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
@@ -247,7 +251,7 @@ test('finders', async () => {
   await delay(20);
 
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'FIRST',
@@ -259,7 +263,7 @@ test('finders', async () => {
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo'
@@ -268,7 +272,7 @@ test('finders', async () => {
   const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
   const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'FIRST',
       'SECOND',
@@ -285,17 +289,17 @@ test('finders', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
@@ -379,7 +383,7 @@ test('finder finding things watcher misses', async () => {
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
 
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo',
@@ -391,7 +395,7 @@ test('finder finding things watcher misses', async () => {
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo'
@@ -400,7 +404,7 @@ test('finder finding things watcher misses', async () => {
   const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
   const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'FIRST',
       'SECOND',
@@ -417,17 +421,17 @@ test('finder finding things watcher misses', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
@@ -477,7 +481,7 @@ test('watcher finding things finder misses', async () => {
   await delay(20);
 
   const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo',
@@ -489,7 +493,7 @@ test('watcher finding things finder misses', async () => {
     ]);
 
   const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'foo bar',
       'bar foo'
@@ -498,7 +502,7 @@ test('watcher finding things finder misses', async () => {
   const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
   const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'FIRST',
       'SECOND',
@@ -515,17 +519,17 @@ test('watcher finding things finder misses', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
     .toEqual([
       'bar foo'
     ]);
 
-  expect(Array.from(foobarComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
     ]);
 
@@ -534,6 +538,168 @@ test('watcher finding things finder misses', async () => {
     ['watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
   ];
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  page.dump();
+});
+
+xtest('replaceOptions', () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments'
+      ]},
+      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
+        '.comment'
+      ]},
+      {sources: ['comment'], tag: 'replySection', selectors: [
+        '.replies'
+      ]},
+    ],
+    finders: {}
+  });
+
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'FIRST'
+    ]);
+
+  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo'
+    ]);
+
+  const allCommentsNext = jest.fn();
+  const topLevelCommentsNext = jest.fn();
+  const allCommentsSub = allComments.subscribe(allCommentsNext);
+  const topLevelCommentsSub = topLevelComments.subscribe(topLevelCommentsNext);
+
+  page.replaceOptions({
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments'
+      ]},
+      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
+        {$or: [
+          [
+            '.comment2',
+            '.comment2-inner'
+          ], [
+            '.comment'
+          ]
+        ]}
+      ]},
+      {sources: ['comment'], tag: 'replySection', selectors: [
+        '.replies'
+      ]},
+    ],
+    finders: {}
+  });
+
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'FIRST',
+      'SECOND',
+      'THIRD',
+      'reply to second',
+      'reply to you'
+    ]);
+
+  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo'
+    ]);
+
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
+
+  expect(allCommentsNext.mock.calls.map(([{type, value}]) =>
+    [type, getCommentNodeTextValue(value)]
+  )).toEqual([]);
+  expect(topLevelCommentsNext.mock.calls.map(([{type, value}]) =>
+    [type, getCommentNodeTextValue(value)]
+  )).toEqual([]);
+
+  allCommentsSub.pullChanges();
+  topLevelCommentsSub.pullChanges();
+
+  expect(allCommentsNext.mock.calls.map(([{type, value}]) =>
+    [type, getCommentNodeTextValue(value)]
+  )).toEqual([
+    //TODO
+  ]);
+  expect(topLevelCommentsNext.mock.calls.map(([{type, value}]) =>
+    [type, getCommentNodeTextValue(value)]
+  )).toEqual([
+    //TODO
+  ]);
+
+  page.dump();
+});
+
+test('replaceOptions throws if tags change', () => {
+  const page = new PageParserTree(document, {
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments'
+      ]},
+      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
+        '.comment'
+      ]},
+      {sources: ['comment'], tag: 'replySection', selectors: [
+        '.replies'
+      ]},
+    ],
+    finders: {}
+  });
+
+  expect(() => page.replaceOptions({
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: []}
+    },
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments'
+      ]},
+      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
+        '.comment'
+      ]},
+      {sources: ['comment'], tag: 'replySection', selectors: [
+        '.replies'
+      ]},
+    ],
+    finders: {}
+  })).toThrowError('replaceOptions does not support tag changes');
+
   page.dump();
 });
 

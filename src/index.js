@@ -131,6 +131,26 @@ function makeLiveSetTransformer(selectors: Array<Selector>): LiveSetTransformer 
 
 type LiveSetTransformer = (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext>;
 
+function makeTagOptions(options: PageParserTreeOptions) {
+  const map = new Map();
+  const list = [];
+  Object.keys(options.tags).forEach(tag => {
+    const tagOptions = options.tags[tag];
+    const {ownedBy} = tagOptions;
+    list.push({tag, ownedBy});
+    map.set(tag, tagOptions);
+  });
+  Object.keys(options.finders)
+    .concat(options.watchers.map(w => w.tag))
+    .forEach(tag => {
+      if (!map.has(tag)) {
+        map.set(tag, {});
+        list.push({tag});
+      }
+    });
+  return {map, list};
+}
+
 export default class PageParserTree {
   tree: TagTree<HTMLElement>;
   _treeController: TagTreeController<HTMLElement>;
@@ -164,22 +184,8 @@ export default class PageParserTree {
       }, 0);
     };
 
-    this._tagOptions = new Map();
-    const tags = [];
-    Object.keys(this._options.tags).forEach(tag => {
-      const tagOptions = this._options.tags[tag];
-      const {ownedBy} = tagOptions;
-      tags.push({tag, ownedBy});
-      this._tagOptions.set(tag, tagOptions);
-    });
-    Object.keys(this._options.finders)
-      .concat(this._options.watchers.map(w => w.tag))
-      .forEach(tag => {
-        if (!this._tagOptions.has(tag)) {
-          this._tagOptions.set(tag, {});
-          tags.push({tag});
-        }
-      });
+    const {map: tagOptionsMap, list: tags} = makeTagOptions(this._options);
+    this._tagOptions = tagOptionsMap;
 
     this.tree = new TagTree({
       root: rootEl,
@@ -285,7 +291,7 @@ export default class PageParserTree {
     });
   }
 
-  dump() {
+  _dumpWithoutEnd() {
     this._subscriptions.forEach(sub => {
       sub.unsubscribe();
     });
@@ -295,11 +301,32 @@ export default class PageParserTree {
         this._treeController.removeTaggedNode(this.tree, tag, node);
       });
     });
+  }
+
+  dump() {
+    this._dumpWithoutEnd();
     this._treeController.end();
   }
 
-  //TODO
   // Intended for use with hot module replacement.
-  // replaceOptions(options: Array<PageParserTreeOptions>) {
-  // }
+  replaceOptions(options: PageParserTreeOptions) {
+    const tagErrStr = 'replaceOptions does not support tag changes';
+    const {map: tagOptionsMap} = makeTagOptions(options);
+    if (this._tagOptions.size !== tagOptionsMap.size) {
+      throw new Error(tagErrStr);
+    }
+    this._tagOptions.forEach((oldOptions, tag) => {
+      const newOptions = tagOptionsMap.get(tag);
+      if (!newOptions) throw new Error(tagErrStr);
+      const oldOwnedBy = oldOptions.ownedBy || [];
+      const newOwnedBy = new Set(newOptions.ownedBy || []);
+      if (oldOwnedBy.length !== newOwnedBy.size) throw new Error(tagErrStr);
+      oldOwnedBy.forEach(tag => {
+        if (!newOwnedBy.has(tag)) throw new Error(tagErrStr);
+      });
+    });
+
+    this._dumpWithoutEnd();
+    throw new Error('not implemented yet');
+  }
 }
