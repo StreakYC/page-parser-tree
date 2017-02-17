@@ -541,7 +541,7 @@ test('watcher finding things finder misses', async () => {
   page.dump();
 });
 
-xtest('replaceOptions', () => {
+test('replaceOptions', () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
     logError,
@@ -600,10 +600,10 @@ xtest('replaceOptions', () => {
       {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
         {$or: [
           [
+            '.comment'
+          ], [
             '.comment2',
             '.comment2-inner'
-          ], [
-            '.comment'
           ]
         ]}
       ]},
@@ -633,25 +633,25 @@ xtest('replaceOptions', () => {
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
-  expect(allCommentsNext.mock.calls.map(([{type, value}]) =>
+  expect(allCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
     [type, getCommentNodeTextValue(value)]
-  )).toEqual([]);
-  expect(topLevelCommentsNext.mock.calls.map(([{type, value}]) =>
+  ))).toEqual([]);
+  expect(topLevelCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
     [type, getCommentNodeTextValue(value)]
-  )).toEqual([]);
+  ))).toEqual([]);
 
   allCommentsSub.pullChanges();
   topLevelCommentsSub.pullChanges();
 
-  expect(allCommentsNext.mock.calls.map(([{type, value}]) =>
+  expect(allCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
     [type, getCommentNodeTextValue(value)]
-  )).toEqual([
-    //TODO
+  ))).toEqual([
+    [['remove', 'FIRST'], ['remove', 'foo bar'], ['remove', 'bar foo'], ['add', 'foo bar'], ['add', 'bar foo'], ['add', 'FIRST'], ['add', 'SECOND'], ['add', 'THIRD'], ['add', 'reply to second'], ['add', 'reply to you']]
   ]);
-  expect(topLevelCommentsNext.mock.calls.map(([{type, value}]) =>
+  expect(topLevelCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
     [type, getCommentNodeTextValue(value)]
-  )).toEqual([
-    //TODO
+  ))).toEqual([
+    [['remove', 'foo bar'], ['remove', 'bar foo'], ['add', 'foo bar'], ['add', 'bar foo']]
   ]);
 
   page.dump();

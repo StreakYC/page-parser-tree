@@ -111,6 +111,7 @@ export default class PageParserTree {
   _logError: (err: Error, el: ?HTMLElement) => void;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
+  _tagsList: Array<{| tag: string, ownedBy?: ?string[] |}>;
   _subscriptions: Array<LiveSetSubscription> = [];
 
   constructor(root: Document|HTMLElement, options: PageParserTreeOptions) {
@@ -131,6 +132,7 @@ export default class PageParserTree {
 
     const {map: tagOptionsMap, list: tags} = makeTagOptions(this._options);
     this._tagOptions = tagOptionsMap;
+    this._tagsList = tags;
 
     this.tree = new TagTree({
       root: rootEl,
@@ -144,12 +146,16 @@ export default class PageParserTree {
       parents: [{tag: null, node: this.tree}]
     }]));
 
+    this._setupWatchersAndFinders();
+  }
+
+  _setupWatchersAndFinders() {
     const tagsWithWatchers = new Set();
     this._options.watchers.forEach(watcher => {
       tagsWithWatchers.add(watcher.tag);
     });
 
-    this._ecSources = new Map(tags.map(({tag}) => {
+    this._ecSources = new Map(this._tagsList.map(({tag}) => {
       const tagOptions = this._tagOptions.get(tag);
       if (!tagOptions) throw new Error();
       const ownedBy = new Set(tagOptions.ownedBy || []);
@@ -266,6 +272,7 @@ export default class PageParserTree {
     });
 
     this._dumpWithoutEnd();
-    throw new Error('not implemented yet');
+    this._options = options;
+    this._setupWatchersAndFinders();
   }
 }
