@@ -300,6 +300,7 @@ test('finders', async () => {
     ]);
 
   expect(logError).toHaveBeenCalledTimes(0);
+  page.dump();
 });
 
 test('watchers and finders for separate tags', async () => {
@@ -334,6 +335,7 @@ test('watchers and finders for separate tags', async () => {
 
   expect(allTopNav.values().size).toBe(1);
   expect(allNavLinks.values().size).toBe(3);
+  page.dump();
 });
 
 test('finder finding things watcher misses', async () => {
@@ -430,6 +432,7 @@ test('finder finding things watcher misses', async () => {
     ]);
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  page.dump();
 });
 
 test('watcher finding things finder misses', async () => {
@@ -531,6 +534,7 @@ test('watcher finding things finder misses', async () => {
     ['watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
   ];
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  page.dump();
 });
 
 describe('validation', () => {
