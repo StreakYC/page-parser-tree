@@ -285,6 +285,19 @@ export default class PageParserTree {
     });
   }
 
+  dump() {
+    this._subscriptions.forEach(sub => {
+      sub.unsubscribe();
+    });
+    this._subscriptions.length = 0;
+    this.tree.getOwned().forEach((liveSet, tag) => {
+      liveSet.values().forEach(node => {
+        this._treeController.removeTaggedNode(this.tree, tag, node);
+      });
+    });
+    this._treeController.end();
+  }
+
   //TODO
   // Intended for use with hot module replacement.
   // replaceOptions(options: Array<PageParserTreeOptions>) {

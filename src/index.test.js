@@ -210,6 +210,20 @@ test('watchers', async () => {
     ]);
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
+
+  expect(allComments.isEnded()).toBe(false);
+
+  page.dump();
+
+  expect(Array.from(topLevelComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+    ]);
+
+  expect(Array.from(allComments.values()).map(x=>qs(x.getValue(), '.body').textContent))
+    .toEqual([
+    ]);
+
+  expect(allComments.isEnded()).toBe(true);
 });
 
 test('finders', async () => {
