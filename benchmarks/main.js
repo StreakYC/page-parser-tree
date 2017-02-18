@@ -5,8 +5,9 @@
 const document = require('jsdom').jsdom(undefined);
 global.__proto__ = document.defaultView;
 
-import '../testlib/MockMutationObserver';
+import emitMutation from '../testlib/MockMutationObserver';
 import assert from 'assert';
+import delay from 'pdelay';
 import type {default as _PageParserTree} from '../src';
 const PageParserTree: Class<_PageParserTree> = (require('../src'): any);
 
@@ -41,7 +42,7 @@ document.documentElement.innerHTML = `
 
 async function main() {
   const firstCommentReplies = qs(document, '.comment > .replies');
-  const repliesToStartWith = 1000;
+  const repliesToStartWith = 3000;
 
   for (let i=0; i<repliesToStartWith; i++) {
     const reply = document.createElement('div');
@@ -88,6 +89,22 @@ async function main() {
 
   const comments = page.tree.getAllByTag('comment');
   assert.strictEqual(comments.values().size, repliesToStartWith+1);
+
+  const articleComments = qs(document, '.article-comments');
+  const articleCommentsParent = articleComments.parentElement;
+  if (!articleCommentsParent) throw new Error();
+  const articleComments2 = articleComments.cloneNode();
+  articleComments2.innerHTML = articleComments.innerHTML;
+
+  articleCommentsParent.appendChild(articleComments2);
+  emitMutation(articleCommentsParent, {
+    addedNodes: [articleComments2]
+  });
+
+  console.time('adding replies');
+  await delay(0);
+  assert.strictEqual(comments.values().size, 2*(repliesToStartWith+1));
+  console.timeEnd('adding replies');
 }
 
 main().catch(err => {
