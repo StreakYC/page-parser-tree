@@ -38,6 +38,7 @@
     "flow-bin": "^0.39.0",
     "flow-copy-source": "^1.1.0",
     "jest": "^18.1.0",
+    "jsdom": "^9.11.0",
     "pdelay": "^1.0.0"
   }
 }

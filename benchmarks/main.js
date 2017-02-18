@@ -5,10 +5,10 @@
 const document = require('jsdom').jsdom(undefined);
 global.__proto__ = document.defaultView;
 
-
 import '../testlib/MockMutationObserver';
 import assert from 'assert';
-import PageParserTree from '../src';
+import type {default as _PageParserTree} from '../src';
+const PageParserTree: Class<_PageParserTree> = (require('../src'): any);
 
 function qs(el: HTMLElement|Document, selector: string): HTMLElement {
   const result = el.querySelector(selector);
