@@ -37,8 +37,9 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
         setValues(s);
       }
 
-      function addedNode(child) {
+      function addedNode(child: Node) {
         if (child.nodeType !== 1) return;
+        /*:: if (!(child instanceof HTMLElement)) throw new Error() */
         if (matchesSelector(child, selector)) {
           const ec = {el: child, parents};
           ecs.set(child, ec);
@@ -46,8 +47,9 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
         }
       }
 
-      function removedNode(child) {
+      function removedNode(child: Node) {
         if (child.nodeType !== 1) return;
+        /*:: if (!(child instanceof HTMLElement)) throw new Error() */
         const ec = ecs.get(child);
         if (!ec) return;
         ecs.delete(child);
@@ -55,10 +57,34 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
       }
 
       function changesHandler(mutations) {
-        mutations.forEach(mutation => {
-          Array.prototype.forEach.call(mutation.addedNodes, addedNode);
-          Array.prototype.forEach.call(mutation.removedNodes, removedNode);
-        });
+        if (mutations.length > 1) {
+          // If any removals are followed by a re-add, then drop the pair.
+          const removedEls = new Set();
+          const addedEls = [];
+          mutations.forEach(({addedNodes, removedNodes}) => {
+            for (let i=0,len=removedNodes.length; i<len; i++) {
+              const el = removedNodes[i];
+              if (el.nodeType !== 1) continue;
+              removedEls.add(removedNodes[i]);
+            }
+            for (let i=0,len=addedNodes.length; i<len; i++) {
+              const el = addedNodes[i];
+              if (el.nodeType !== 1) continue;
+              if (removedEls.has(el)) {
+                removedEls.delete(el);
+              } else {
+                addedEls.push(el);
+              }
+            }
+          });
+          addedEls.forEach(addedNode);
+          removedEls.forEach(removedNode);
+        } else {
+          mutations.forEach(mutation => {
+            Array.prototype.forEach.call(mutation.addedNodes, addedNode);
+            Array.prototype.forEach.call(mutation.removedNodes, removedNode);
+          });
+        }
       }
       const observer = new MutationObserver(changesHandler);
       observer.observe(element, {childList: true});
