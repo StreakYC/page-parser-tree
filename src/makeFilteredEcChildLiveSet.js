@@ -38,6 +38,7 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
       }
 
       function addedNode(child) {
+        if (child.nodeType !== 1) return;
         if (matchesSelector(child, selector)) {
           const ec = {el: child, parents};
           ecs.set(child, ec);
@@ -46,6 +47,7 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
       }
 
       function removedNode(child) {
+        if (child.nodeType !== 1) return;
         const ec = ecs.get(child);
         if (!ec) return;
         ecs.delete(child);

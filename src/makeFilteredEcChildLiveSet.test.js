@@ -30,6 +30,7 @@ test('listen', async () => {
   const divIgnoreA = Object.assign(document.createElement('div'), {className: 'aa ignore'});
   const divB = Object.assign(document.createElement('div'), {className: 'b'});
   const divIgnoreB = Object.assign(document.createElement('div'), {className: 'bb ignore'});
+  const commentNode = document.createComment('comment should be ignored');
   div.appendChild(divA);
   div.appendChild(divIgnoreA);
   const parents = [];
@@ -38,9 +39,10 @@ test('listen', async () => {
   const next = jest.fn();
   liveSet.subscribe({next});
 
-  div.appendChild(divB);
+  div.appendChild(commentNode);
   div.appendChild(divIgnoreB);
-  emitMutation(div, {addedNodes: [divB, divIgnoreB]});
+  div.appendChild(divB);
+  emitMutation(div, {addedNodes: [commentNode, divIgnoreB, divB]});
   expect(next).toHaveBeenCalledTimes(0);
   await delay(0);
   liveSet.values().forEach(ec => {
