@@ -1,13 +1,12 @@
 /* @flow */
 
 import t from 'transducers.js';
-import matchesSelector from 'matches-selector-ng';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
 import liveSetMap from 'live-set/map';
 import liveSetFlatMap from 'live-set/flatMap';
-import makeElementChildLiveSet from './makeElementChildLiveSet';
+import makeFilteredEcChildLiveSet from './makeFilteredEcChildLiveSet';
 import makeMutationObserverLiveSet from './makeMutationObserverLiveSet';
 import type LiveSet from 'live-set';
 import type {Selector, ElementContext} from './index';
@@ -16,14 +15,7 @@ export default function makeLiveSetTransformerFromSelectors(selectors: Array<Sel
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const itemString = item;
-      const filterXf = t.filter(el => matchesSelector(el, itemString));
-      const flatMapFn = ec => {
-        const transducer = t.compose(
-          filterXf,
-          t.map(el => ({el, parents: ec.parents}))
-        );
-        return liveSetTransduce(makeElementChildLiveSet(ec.el), transducer);
-      };
+      const flatMapFn = ec => makeFilteredEcChildLiveSet(ec, itemString);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$or) {
       const transformers = item.$or.map(makeLiveSetTransformerFromSelectors);
