@@ -13,7 +13,7 @@ function ev(el: Element): EventEmitter {
 }
 
 export default function emitMutation(el: Element, mutation: Object) {
-  ev(el).emit('mutate', {addedNodes: [], removedNodes: [], ...mutation});
+  ev(el).emit('mutate', {target: el, addedNodes: [], removedNodes: [], ...mutation});
 }
 
 class MockMutationObserver {

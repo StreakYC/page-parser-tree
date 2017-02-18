@@ -94,7 +94,7 @@ function logErrorSummary([err, el]) {
   return [err.message, tagAndClassName(el), content];
 }
 
-function qs(el: HTMLElement, selector: string): HTMLElement {
+function qs(el: HTMLElement|Document, selector: string): HTMLElement {
   const result = el.querySelector(selector);
   if (!result) throw new Error(`Selector failed to find element: ${selector}`);
   return result;
@@ -652,6 +652,51 @@ test('replaceOptions', () => {
     [type, getCommentNodeTextValue(value)]
   ))).toEqual([
     [['remove', 'foo bar'], ['remove', 'bar foo'], ['add', 'foo bar'], ['add', 'bar foo']]
+  ]);
+
+  page.dump();
+});
+
+test('$watch', async () => {
+  const page = new PageParserTree(document, {
+    logError(e) {
+      throw e;
+    },
+    tags: {},
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        {$watch: {attributeFilter: ['data-test'], cond: '[data-test="foo"]'}},
+        '.article-comments'
+      ]}
+    ],
+    finders: {}
+  });
+
+  const commentSections = page.tree.getOwnedByTag('commentSection');
+  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
+  ]);
+
+  const outer = qs(document, '.page-outer');
+  outer.setAttribute('data-test', 'foo');
+  emitMutation(outer, {attributeName: 'data-test'});
+
+  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
+  ]);
+
+  await delay(0);
+
+  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
+    'div.article-comments'
+  ]);
+
+  outer.setAttribute('data-test', 'foobar');
+  emitMutation(outer, {attributeName: 'data-test'});
+
+  await delay(0);
+
+  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
   ]);
 
   page.dump();

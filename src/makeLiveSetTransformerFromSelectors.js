@@ -5,8 +5,10 @@ import matchesSelector from 'matches-selector-ng';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
+import liveSetMap from 'live-set/map';
 import liveSetFlatMap from 'live-set/flatMap';
 import makeElementChildLiveSet from './makeElementChildLiveSet';
+import makeMutationObserverLiveSet from './makeMutationObserverLiveSet';
 import type LiveSet from 'live-set';
 import type {Selector, ElementContext} from './index';
 
@@ -30,7 +32,12 @@ export default function makeLiveSetTransformerFromSelectors(selectors: Array<Sel
           transformer(liveSet)
         ));
     } else if (item.$watch) {
-      throw new Error('TODO');
+      const {attributeFilter, cond} = item.$watch;
+      const flatMapFn = ec => liveSetMap(
+        makeMutationObserverLiveSet(ec.el, attributeFilter, cond),
+        () => ec
+      );
+      return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$log) {
       const {$log} = item;
       const filterFn = value => {
