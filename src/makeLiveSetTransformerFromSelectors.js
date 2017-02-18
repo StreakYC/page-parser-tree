@@ -4,7 +4,6 @@ import t from 'transducers.js';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
-import liveSetMap from 'live-set/map';
 import liveSetFlatMap from 'live-set/flatMap';
 import makeFilteredEcChildLiveSet from './makeFilteredEcChildLiveSet';
 import makeMutationObserverLiveSet from './makeMutationObserverLiveSet';
