@@ -4,7 +4,6 @@ import LiveSet from 'live-set';
 import type {LiveSetController, LiveSetSubscription} from 'live-set';
 import liveSetMerge from 'live-set/merge';
 import liveSetFlatMap from 'live-set/flatMap';
-import liveSetMap from 'live-set/map';
 import {TagTree} from 'tag-tree';
 import type {TagTreeController, TagTreeNode} from 'tag-tree';
 
@@ -183,35 +182,72 @@ export default class PageParserTree {
         return parentNode;
       }
 
-      const ecSet = liveSetMap(ecsToTag, ec => {
-        const {el, parents} = ec;
-        const parentNode = findParentNode(parents);
-        const node = this._treeController.addTaggedValue(parentNode, tag, el);
-        if (elementsToNodes.has(el)) {
-          this._logError(new Error('Watcher received element twice'), el);
-        }
-        elementsToNodes.set(el, node);
+      const ecSet = new LiveSet({
+        read() {
+          throw new Error();
+        },
+        listen: (setValues, controller) => {
+          const m: Map<ElementContext, ElementContext> = new Map();
 
-        const newParents = ec.parents.concat([{tag, node}]);
-        return {el, parents: newParents};
+          const cb = (ec: ElementContext): ElementContext => {
+            const {el, parents} = ec;
+            const parentNode = findParentNode(parents);
+            const node = this._treeController.addTaggedValue(parentNode, tag, el);
+            if (elementsToNodes.has(el)) {
+              this._logError(new Error('Watcher received element twice'), el);
+            }
+            elementsToNodes.set(el, node);
+
+            const newParents = ec.parents.concat([{tag, node}]);
+            return {el, parents: newParents};
+          };
+
+          return ecsToTag.subscribe({
+            start: () => {
+              const s = new Set();
+              ecsToTag.values().forEach(value => {
+                const newValue = cb(value);
+                m.set(value, newValue);
+                s.add(newValue);
+              });
+              setValues(s);
+            },
+            next: changes => {
+              changes.forEach(change => {
+                if (change.type === 'add') {
+                  const newValue = cb(change.value);
+                  m.set(change.value, newValue);
+                  controller.add(newValue);
+                } else if (change.type === 'remove') {
+                  const newValue = m.get(change.value);
+                  if (!newValue) throw new Error('removed item not in liveset');
+                  m.delete(change.value);
+                  controller.remove(newValue);
+
+                  const node = elementsToNodes.get(newValue.el);
+                  if (!node) throw new Error('Should not happen: received removal of unseen element');
+                  elementsToNodes.delete(newValue.el);
+                  const nodeParent = node.getParent();
+
+                  // The node might have already been removed from the tree if it
+                  // is owned by a node that was just removed.
+                  if (nodeParent && nodeParent.ownsNode(node)) {
+                    this._treeController.removeTaggedNode(nodeParent, tag, node);
+                  }
+                }
+              });
+            },
+            error(err) {
+              controller.error(err);
+            },
+            complete() {
+              controller.end();
+            }
+          });
+        }
       });
 
-      this._subscriptions.push(ecSet.subscribe(changes => {
-        changes.forEach(change => {
-          if (change.type === 'remove') {
-            const node = elementsToNodes.get(change.value.el);
-            if (!node) throw new Error('Should not happen: received removal of unseen element');
-            elementsToNodes.delete(change.value.el);
-            const nodeParent = node.getParent();
-
-            // The node might have already been removed from the tree if it
-            // is owned by a node that was just removed.
-            if (nodeParent && nodeParent.ownsNode(node)) {
-              this._treeController.removeTaggedNode(nodeParent, tag, node);
-            }
-          }
-        });
-      }));
+      this._subscriptions.push(ecSet.subscribe({}));
 
       return [tag, {liveSet, controller, ecSet}];
     }));
