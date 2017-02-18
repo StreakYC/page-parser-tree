@@ -3,11 +3,14 @@
 import LiveSet from 'live-set';
 import matchesSelector from 'matches-selector-ng';
 
+import type {ElementContext} from '.';
+
 export default function makeMutationObserverLiveSet(
-  element: HTMLElement,
+  ec: ElementContext,
   attributeFilter: string[],
   cond: string | (el: HTMLElement) => boolean
-): LiveSet<HTMLElement> {
+): LiveSet<ElementContext> {
+  const {el: element} = ec;
   const _cond = cond;
   const checkElement = typeof _cond === 'string' ?
     () => matchesSelector(element, _cond) :
@@ -17,7 +20,7 @@ export default function makeMutationObserverLiveSet(
     read() {
       const s = new Set();
       if (checkElement()) {
-        s.add(element);
+        s.add(ec);
       }
       return s;
     },
@@ -26,7 +29,7 @@ export default function makeMutationObserverLiveSet(
       const initialValues = new Set();
       if (checkElement()) {
         isInSet = true;
-        initialValues.add(element);
+        initialValues.add(ec);
       }
       setValues(initialValues);
 
@@ -35,12 +38,12 @@ export default function makeMutationObserverLiveSet(
         if (checkElement()) {
           if (!isInSet) {
             isInSet = true;
-            controller.add(element);
+            controller.add(ec);
           }
         } else {
           if (isInSet) {
             isInSet = false;
-            controller.remove(element);
+            controller.remove(ec);
           }
         }
       }

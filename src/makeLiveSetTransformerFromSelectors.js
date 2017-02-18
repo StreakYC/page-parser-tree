@@ -25,10 +25,7 @@ export default function makeLiveSetTransformerFromSelectors(selectors: Array<Sel
         ));
     } else if (item.$watch) {
       const {attributeFilter, cond} = item.$watch;
-      const flatMapFn = ec => liveSetMap(
-        makeMutationObserverLiveSet(ec.el, attributeFilter, cond),
-        () => ec
-      );
+      const flatMapFn = ec => makeMutationObserverLiveSet(ec, attributeFilter, cond);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$log) {
       const {$log} = item;
