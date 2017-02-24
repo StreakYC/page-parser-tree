@@ -55,9 +55,9 @@ export type Finder = {|
   interval?: ?number;
 |};
 
-export type TagOptions = {
+export type TagOptions = {|
   ownedBy?: ?Array<string>;
-};
+|};
 
 export type PageParserTreeOptions = {|
   logError?: ?(err: Error, el: ?HTMLElement) => void;
@@ -89,7 +89,7 @@ function makeTagOptions(options: PageParserTreeOptions) {
     .concat(options.watchers.map(w => w.tag))
     .forEach(tag => {
       if (!map.has(tag)) {
-        map.set(tag, {});
+        map.set(tag, {ownedBy: []});
         list.push({tag});
       }
     });
