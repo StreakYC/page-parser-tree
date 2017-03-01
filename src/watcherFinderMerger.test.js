@@ -80,7 +80,7 @@ test('listen with watcher', async () => {
   const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, null, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, null, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -110,7 +110,7 @@ test('listen with finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, null, finder, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, null, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual([]);
@@ -155,7 +155,7 @@ test('listen with consistent watcher and finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -184,7 +184,7 @@ test('listen with bad watcher and good finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -203,7 +203,7 @@ test('listen with bad watcher and good finder', async () => {
     reorderedWatcherValues.slice(3).map(ec => ['add', serializeEc(ec)])
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
   ]);
 
   const commentA1parent = commentA1.parentElement;
@@ -228,8 +228,8 @@ test('listen with bad watcher and good finder', async () => {
     [['add', ['div.comment.a1', [{tag: null, el: 'html'}, {tag: 'comment', el: 'div.comment.a'}]]]]
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['finder found element missed by watcher', 'div.comment.a1'],
-    ['finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
   ]);
 });
 
@@ -244,7 +244,7 @@ test('listen with good watcher and bad finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -260,7 +260,7 @@ test('listen with good watcher and bad finder', async () => {
     watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['watcher found element missed by finder', 'div.comment.a1'],
+    ['PageParserTree(comment) watcher found element missed by finder', 'div.comment.a1'],
   ]);
 });
 
@@ -275,7 +275,7 @@ test('listen watcher finds element after finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -287,9 +287,9 @@ test('listen watcher finds element after finder', async () => {
     watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['finder found element missed by watcher', 'div.comment.a1'],
-    ['finder found element missed by watcher', 'div.comment.a2'],
-    ['finder found element missed by watcher', 'div.comment.b'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a2'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.b'],
   ]);
 
   watcherValues.slice(2 /* skip 1 */).forEach(ec => {
@@ -303,11 +303,11 @@ test('listen watcher finds element after finder', async () => {
     watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['finder found element missed by watcher', 'div.comment.a1'],
-    ['finder found element missed by watcher', 'div.comment.a2'],
-    ['finder found element missed by watcher', 'div.comment.b'],
-    ['watcher found element already found by finder', 'div.comment.a2'],
-    ['watcher found element already found by finder', 'div.comment.b'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a2'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.b'],
+    ['PageParserTree(comment) watcher found element already found by finder', 'div.comment.a2'],
+    ['PageParserTree(comment) watcher found element already found by finder', 'div.comment.b'],
   ]);
 
   controller.remove(watcherValues[3]);
@@ -318,10 +318,10 @@ test('listen watcher finds element after finder', async () => {
     watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])
   ]);
   expect(logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])).toEqual([
-    ['finder found element missed by watcher', 'div.comment.a1'],
-    ['finder found element missed by watcher', 'div.comment.a2'],
-    ['finder found element missed by watcher', 'div.comment.b'],
-    ['watcher found element already found by finder', 'div.comment.a2'],
-    ['watcher found element already found by finder', 'div.comment.b'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a1'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a2'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.b'],
+    ['PageParserTree(comment) watcher found element already found by finder', 'div.comment.a2'],
+    ['PageParserTree(comment) watcher found element already found by finder', 'div.comment.b'],
   ]);
 });

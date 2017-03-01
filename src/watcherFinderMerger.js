@@ -4,7 +4,7 @@ import LiveSet from 'live-set';
 import type {TagTree} from 'tag-tree';
 import type {TagOptions, ElementContext, Finder} from '.';
 
-export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
+export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: string, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
   return new LiveSet({
     read() {
       throw new Error('Should not happen');
@@ -34,7 +34,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
                 const {el} = change.value;
                 watcherFoundElements.add(el);
                 if (currentElements.has(el)) {
-                  logError(new Error('watcher found element already found by finder'), el);
+                  logError(new Error(`PageParserTree(${tag}) watcher found element already found by finder`), el);
                 } else {
                   currentElements.add(el);
                   currentElementContexts.add(change.value);
@@ -81,7 +81,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
               currentElementContexts.add(ec);
               controller.add(ec);
               if (watcherSet) {
-                logError(new Error('finder found element missed by watcher'), el);
+                logError(new Error(`PageParserTree(${tag}) finder found element missed by watcher`), el);
                 if (sub) sub.pullChanges();
               }
             }
@@ -93,7 +93,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
               if (watcherFoundElements.has(el)) {
                 if (!watcherFoundElementsMissedByFinder.has(el)) {
                   watcherFoundElementsMissedByFinder.add(el);
-                  logError(new Error('watcher found element missed by finder'), el);
+                  logError(new Error(`PageParserTree(${tag}) watcher found element missed by finder`), el);
                 }
               } else {
                 currentElementContexts.delete(ec);

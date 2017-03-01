@@ -140,7 +140,7 @@ export default class PageParserTree {
       const finder = this._options.finders[tag];
       const ecsToTag = finder ?
         watcherFinderMerger(
-          this.tree, tagOptions, combinedWatcherSet, finder, this._logError
+          this.tree, tag, tagOptions, combinedWatcherSet, finder, this._logError
         ) : combinedWatcherSet || LiveSet.constant(new Set());
 
       const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
@@ -169,7 +169,7 @@ export default class PageParserTree {
             const parentNode = findParentNode(parents);
             const node = this._treeController.addTaggedValue(parentNode, tag, el);
             if (elementsToNodes.has(el)) {
-              this._logError(new Error('Watcher received element twice'), el);
+              this._logError(new Error(`PageParserTree(${tag}) watcher received element twice`), el);
             }
             elementsToNodes.set(el, node);
 

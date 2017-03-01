@@ -377,8 +377,8 @@ test('finder finding things watcher misses', async () => {
   await delay(20);
 
   const expectedErrorsSummary = [
-    ['finder found element missed by watcher', 'div.comment2-inner', 'SECOND'],
-    ['finder found element missed by watcher', 'div.comment2-inner', 'THIRD'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment2-inner', 'SECOND'],
+    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment2-inner', 'THIRD'],
   ];
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
 
@@ -534,8 +534,8 @@ test('watcher finding things finder misses', async () => {
     ]);
 
   const expectedErrorsSummary = [
-    ['watcher found element missed by finder', 'div.comment2-inner', 'SECOND'],
-    ['watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
+    ['PageParserTree(comment) watcher found element missed by finder', 'div.comment2-inner', 'SECOND'],
+    ['PageParserTree(comment) watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
   ];
   expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
   page.dump();
