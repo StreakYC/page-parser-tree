@@ -63,50 +63,58 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOp
         setValues(new Set());
       }
 
-      let interval;
+      let timeout;
       if (finder) {
-        const _finder = finder;
+        const {fn} = finder;
+        const interval = finder.interval || (5000+Math.random()*5000);
         const ownedBy = tagOptions.ownedBy || [];
-        interval = setInterval(() => {
-          const finderRunFoundElements = new Set();
-          const found = _finder.fn(tagTree.getValue());
-          for (let i=0, len=found.length; i<len; i++) {
-            const el = found[i];
-            finderRunFoundElements.add(el);
-            if (!currentElements.has(el)) {
-              currentElements.add(el);
-              const ec = makeElementContext(el, tagTree, ownedBy);
-              currentElementContexts.add(ec);
-              controller.add(ec);
-              if (watcherSet) {
-                logError(new Error('finder found element missed by watcher'), el);
-                if (sub) sub.pullChanges();
-              }
-            }
-          }
 
-          currentElementContexts.forEach(ec => {
-            const {el} = ec;
-            if (!finderRunFoundElements.has(el)) {
-              if (watcherFoundElements.has(el)) {
-                if (!watcherFoundElementsMissedByFinder.has(el)) {
-                  watcherFoundElementsMissedByFinder.add(el);
-                  logError(new Error('watcher found element missed by finder'), el);
+        const scheduleFinder = () => {
+          timeout = setTimeout(() => {
+            const finderRunFoundElements = new Set();
+            const found = fn(tagTree.getValue());
+            for (let i=0, len=found.length; i<len; i++) {
+              const el = found[i];
+              finderRunFoundElements.add(el);
+              if (!currentElements.has(el)) {
+                currentElements.add(el);
+                const ec = makeElementContext(el, tagTree, ownedBy);
+                currentElementContexts.add(ec);
+                controller.add(ec);
+                if (watcherSet) {
+                  logError(new Error('finder found element missed by watcher'), el);
+                  if (sub) sub.pullChanges();
                 }
-              } else {
-                currentElementContexts.delete(ec);
-                currentElements.delete(el);
-                controller.remove(ec);
-                if (sub) sub.pullChanges();
               }
             }
-          });
-        }, finder.interval || (5000+Math.random()*5000));
+
+            currentElementContexts.forEach(ec => {
+              const {el} = ec;
+              if (!finderRunFoundElements.has(el)) {
+                if (watcherFoundElements.has(el)) {
+                  if (!watcherFoundElementsMissedByFinder.has(el)) {
+                    watcherFoundElementsMissedByFinder.add(el);
+                    logError(new Error('watcher found element missed by finder'), el);
+                  }
+                } else {
+                  currentElementContexts.delete(ec);
+                  currentElements.delete(el);
+                  controller.remove(ec);
+                  if (sub) sub.pullChanges();
+                }
+              }
+            });
+
+            scheduleFinder();
+          }, interval);
+        };
+
+        scheduleFinder();
       }
 
       return {
         unsubscribe() {
-          clearInterval(interval);
+          clearTimeout(timeout);
           if (sub) sub.unsubscribe();
         },
         pullChanges() {
