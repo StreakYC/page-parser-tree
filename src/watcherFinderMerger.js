@@ -5,51 +5,9 @@ import type {TagTree} from 'tag-tree';
 import type {TagOptions, ElementContext, Finder} from '.';
 
 export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
-  let read_elementsLoggedAbout;
   return new LiveSet({
     read() {
-      if (!read_elementsLoggedAbout) {
-        read_elementsLoggedAbout = {
-          missedByWatcher: new WeakSet(),
-          missedByFinder: new WeakSet()
-        };
-      }
-
-      const watcherFoundElements = new Set();
-      let s;
-      if (watcherSet) {
-        s = watcherSet.values();
-        s.forEach(ec => {
-          watcherFoundElements.add(ec.el);
-        });
-      } else {
-        s = new Set();
-      }
-      if (finder) {
-        const ownedBy = tagOptions.ownedBy || [];
-        const finderRunFoundElements = new Set();
-        const found = finder.fn(tagTree.getValue());
-        for (let i=0,len=found.length; i<len; i++) {
-          const el = found[i];
-          finderRunFoundElements.add(el);
-          if (!watcherFoundElements.has(el)) {
-            const ec = makeElementContext(el, tagTree, ownedBy);
-            s.add(ec);
-            if (watcherSet && !read_elementsLoggedAbout.missedByWatcher.has(el)) {
-              read_elementsLoggedAbout.missedByWatcher.add(el);
-              logError(new Error('finder found element missed by watcher'), el);
-            }
-          }
-        }
-
-        watcherFoundElements.forEach(el => {
-          if (!finderRunFoundElements.has(el) && !read_elementsLoggedAbout.missedByFinder.has(el)) {
-            read_elementsLoggedAbout.missedByFinder.add(el);
-            logError(new Error('watcher found element missed by finder'), el);
-          }
-        });
-      }
-      return s;
+      throw new Error('Should not happen');
     },
     listen(setValues, controller) {
       const currentElements = new Set();
