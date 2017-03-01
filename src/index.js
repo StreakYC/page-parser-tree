@@ -12,36 +12,11 @@ import makeLiveSetTransformerFromSelectors from './makeLiveSetTransformerFromSel
 
 export type Selector =
   string
-  // The children operator: this will change the matched set to contain only
-  // the direct children of the current matched set, and then filters them
-  // based on a css selector string.
-
   | {| $filter: (el: HTMLElement) => boolean |}
-  // The $filter operator allows you to specify a function which will be called
-  // on every matched element. If the function returns false, then the element
-  // will be removed from the matched set.
-
   | {| $map: (el: HTMLElement) => ?HTMLElement |}
-  // The $map operator allows you to specify a function which will be called
-  // on every matched element, and each element in the matched set will be
-  // replaced with the element returned by your function. If your function
-  // returns null, then the element will just be removed from the matched set.
-
   | {| $watch: {| attributeFilter: string[], cond: string | (el: HTMLElement) => boolean |} |}
-  // The $watch operator allows you to specify either an attributeFilter list
-  // and a css selector string or function. The currently matched elements
-  // will be removed from the matched set if they don't match the css selector
-  // string or pass the given function. If the element has any list attributes
-  // changed, then it will be re-considered and may be added or removed from
-  // the matched set.
-
   | {| $or: Array<Array<Selector>> |}
-  // The $or operator forks the operator list into multiple lists, and then
-  // re-combines the resulting matched sets.
-
   | {| $log: string |}
-  // The $log operator uses `console.log` to log every element in the matched
-  // set to the console with a given string prefix.
 ;
 
 export type Watcher = {|

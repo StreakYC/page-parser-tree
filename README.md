@@ -230,6 +230,9 @@ It is an error to pass options for a tag name that has no Watchers or Finders.
 #### PageParserTreeOptions::finders
 `PageParserTreeOptions::finders: {[tag:string]: Finder}`
 
+The finders property is required and must be an object. Each property names a
+tag, and the value is a Finder object.
+
 A Finder object has an `fn` property which must be a function. The `fn`
 function must take an HTMLElement representing the root element of the
 PageParserTree, and it must return an Array or Array-like object of the
@@ -241,8 +244,120 @@ defaults to 5000. The Finder function may be called less often that this
 depending on page and user activity.
 
 #### PageParserTreeOptions::watchers
+`PageParserTreeOptions::watchers: Array<Watcher>`
 
-TODO
+This property must be an array of Watcher objects. A Watcher object contains
+the following properties:
+
+```
+{
+  sources: Array<string|null>;
+  tag: string;
+  selectors: Array<Selector>;
+}
+```
+
+A watcher functions by starting with a matched set of elements, and
+transforming that matched set of elements into a new matched set of elements
+iteratively by using the array of Selector values.
+
+The sources array defines the initial matched set of elements. The value `null`
+represents the root element given to the PageParserTree constructor (usually
+the `document`). Strings may be given naming tags. Multiple sources may be
+given. (Alternatively, multiple Watchers may be given for the same tag, if for
+example the tagged element is to be found in very different parts of the page.)
+
+The valid values for the Selector type are described in the Selectors section.
+
+### Selectors
+
+#### Children
+`string`
+
+This will change the matched set to contain only the direct children of each
+element of the current matched set, and then filters those elements based on a
+CSS selector string.
+
+Note that if an element does not initially match the given CSS selector string
+but is later modified to match it (e.g. the web application changed one of its
+attributes some time after adding it to the page), then the Children selector
+will not re-run the CSS selector check on the element. The Children selector
+is only triggered by changes to an element's child list; the Watcher selector
+must be used if you want to trigger by any other changes to an element.
+
+#### Filter
+`{ $filter: (el: HTMLElement) => boolean }`
+
+This allows you to specify a function which will be called on every matched
+element. If the function returns false, then the element will be removed from
+the matched set.
+
+#### Map
+`{ $map: (el: HTMLElement) => ?HTMLElement }`
+This allows you to specify a function which will be called on every matched
+element, and each element in the matched set will be replaced with the element
+returned by your function. If your function returns null, then the element will
+just be removed from the matched set.
+
+#### Watch
+`{ $watch: { attributeFilter: string[], cond: string | (el: HTMLElement) => boolean } }`
+
+This selector allows you to specify an array of attribute names to react to
+changes to, and a CSS selector string or a function to evaluate the element
+against. Every element will have the condition evaluated when it first becomes
+part of the matched set and whenever any of the listed attributes are modified.
+
+#### Or
+`{ $or: Array<Array<Selector>> }`
+
+For each array of selectors, this takes the current matched set and creates a
+new matched set by applying the list of selectors to it. All of the resulting
+matched sets are combined to create the output matched set. This selector can
+be thought of as forking the selector list at a given point, using several
+alternatives selector lists to continue it, and then recombining the results.
+
+For an example, imagine a site where "message" elements all match the following
+CSS selector string:
+
+```css
+body > div.main > div.border > div.message,
+body > div.footer > div.message {}
+```
+
+Imagine for a moment that CSS supported a feature so that this was an
+equivalent selector string:
+
+```css
+body > :or(div.main > div.border, div.footer) > div.message {}
+```
+
+PageParserTree's Or selector implements an operation like that. Here's an
+example a PageParserTree Watcher supporting the above page structure:
+
+```js
+{
+  sources: [null], tag: 'message', selectors: [
+    'body',
+    {$or: [
+      [
+        'div.main',
+        'div.border'
+      ], [
+        'div.footer'
+      ]
+    ]},
+    'div.message'
+  ]
+}
+```
+
+#### Log
+`{ $log: string }`
+
+This selector uses `console.log` to log every time an element becomes part of
+the matched set at the given position in the chain. The given string will be
+part of the logged message. This is intended for use in development while
+debugging.
 
 ## Types
 
