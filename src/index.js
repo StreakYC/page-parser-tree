@@ -27,7 +27,7 @@ export type Watcher = {|
 
 export type Finder = {|
   fn(root: HTMLElement): Array<HTMLElement> | NodeList<HTMLElement>;
-  interval?: ?number;
+  interval?: ?number|(elementCount: number, timeRunning: number) => number;
 |};
 
 export type TagOptions = {|

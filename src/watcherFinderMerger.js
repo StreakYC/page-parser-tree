@@ -65,8 +65,8 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: 
 
       let timeoutHandle, idleHandle;
       if (finder) {
-        const {fn} = finder;
-        const interval = finder.interval || (5000+Math.random()*5000);
+        const finderStartedTimestamp = Date.now();
+        const {fn, interval} = finder;
         const ownedBy = tagOptions.ownedBy || [];
 
         const runFinder = () => {
@@ -108,13 +108,25 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: 
         };
 
         const scheduleFinder = () => {
+          let time;
+          if (interval == null) {
+            time = 5000+Math.random()*1000;
+          } else if (typeof interval === 'number') {
+            time = interval;
+          } else if (typeof interval === 'function') {
+            time = interval(currentElements.size, Date.now()-finderStartedTimestamp);
+          } else {
+            throw new Error(`interval has wrong type: ${typeof interval}`);
+          }
+
           timeoutHandle = setTimeout(() => {
             if (global.requestIdleCallback && global.cancelIdleCallback) {
-              idleHandle = global.requestIdleCallback(runFinder, {timeout: interval});
+              // Wait up to `time` milliseconds again until there's an idle moment.
+              idleHandle = global.requestIdleCallback(runFinder, {timeout: time});
             } else {
               runFinder();
             }
-          }, interval);
+          }, time);
         };
 
         scheduleFinder();

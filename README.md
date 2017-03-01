@@ -245,6 +245,12 @@ milliseconds the Finder function is to be called. The `interval` property
 defaults to 5000. The Finder function may be called less often that this
 depending on page and user activity.
 
+Alternative, `interval` may be a function that returns a number. The function
+will be passed the number of elements that have currently been found on the
+page, and the amount of time that has passed since the finder started running.
+If there are a limited number of elements expected to be found, then his allows
+the finder to throttle back after they're found.
+
 #### PageParserTreeOptions::watchers
 `PageParserTreeOptions::watchers: Array<Watcher>`
 

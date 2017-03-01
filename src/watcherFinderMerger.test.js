@@ -267,8 +267,9 @@ test('listen with good watcher and bad finder', async () => {
 test('listen watcher finds element after finder', async () => {
   const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
 
+  const interval = jest.fn(() => 20);
   const finder = {
-    interval: 20,
+    interval,
     fn(root) {
       return root.querySelectorAll('.comment');
     }
@@ -278,6 +279,12 @@ test('listen watcher finds element after finder', async () => {
   const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
+
+  expect(interval.mock.calls.length).toBe(1);
+  expect(interval.mock.calls[interval.mock.calls.length-1][0]).toBe(1);
+  expect(interval.mock.calls[interval.mock.calls.length-1][1]).toBeGreaterThanOrEqual(0);
+  expect(interval.mock.calls[interval.mock.calls.length-1][1]).toBeLessThan(50);
+
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
 
   await delay(50);
@@ -291,6 +298,10 @@ test('listen watcher finds element after finder', async () => {
     ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.a2'],
     ['PageParserTree(comment) finder found element missed by watcher', 'div.comment.b'],
   ]);
+
+  expect(interval.mock.calls.length).toBeGreaterThanOrEqual(2);
+  expect(interval.mock.calls[interval.mock.calls.length-1][0]).toBe(4);
+  expect(interval.mock.calls[interval.mock.calls.length-1][1]).toBeGreaterThanOrEqual(30);
 
   watcherValues.slice(2 /* skip 1 */).forEach(ec => {
     controller.add(ec);
