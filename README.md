@@ -186,9 +186,12 @@ This replaces the options object that the PageParserTree was instantiated with.
 This is mainly intended for use in development with hot module replacement to
 allow live-editing of the options within a running page.
 
-Currently this method empties out the `tree` TagTree as if all elements were
-removed, and then the Watchers and Finders specified in the new options are
-started from scratch.
+Currently this method has some limitations:
+* The `tree` TagTree will be emptied out as if all elements were removed from
+  the page, and then the Watchers and Finders specified in the new options are
+  started from scratch.
+* An error will be thrown if the set of tags or any of their ownedBy lists
+  change.
 
 ### PageParserTreeOptions
 
