@@ -193,6 +193,55 @@ started from scratch.
 
 ### PageParserTreeOptions
 
+The PageParserTreeOptions specifies the Watchers and Finders used to populate
+the TagTree and other options.
+
+#### PageParserTreeOptions::logError
+`PageParserTreeOptions::logError(err: Error, el: ?HTMLElement): void`
+
+This is an optional property specifying a function to be called if
+PageParserTree encounters an error. It will be passed an Error object and
+optionally an HTMLElement if one is relevant.
+
+The main reason PageParserTree will call logError is if there are Watchers and
+a Finder for a tag and they are inconsistent with each other. The error message
+will include the name of the tag, and the element which was missed by one of
+them will be passed to logError.
+
+#### PageParserTreeOptions::tags
+`PageParserTreeOptions::tags: {[tag:string]: TagOptions}`
+
+The tags property is required and must be an object. Each property must be a
+tag name with a value containing a TagOptions object. Not all tags need to have
+an entry here; it's legal to pass an empty object as the tags property.
+
+TagOptions is an object that has an optional `ownedBy` property which may be an
+array of strings referring to other tag names. Each node in a TagTree is owned
+by another node, defaulting to the root node. If you specify any tag names
+in the `ownedBy` array, then any node of this tag will be owned by the node of
+the closest ancestor with a tag in the `ownedBy` array if any are present.
+
+A tag may own itself; this is useful to represent hierarchical user-interfaces
+such as comment trees on reddit where a comment element may be the owner of its
+direct replies.
+
+It is an error to pass options for a tag name that has no Watchers or Finders.
+
+#### PageParserTreeOptions::finders
+`PageParserTreeOptions::finders: {[tag:string]: Finder}`
+
+A Finder object has an `fn` property which must be a function. The `fn`
+function must take an HTMLElement representing the root element of the
+PageParserTree, and it must return an Array or Array-like object of the
+HTMLElements to tag.
+
+A finder object may have an `interval` property controlling how often in
+milliseconds the Finder function is to be called. The `interval` property
+defaults to 5000. The Finder function may be called less often that this
+depending on page and user activity.
+
+#### PageParserTreeOptions::watchers
+
 TODO
 
 ## Types
