@@ -23,9 +23,9 @@ initialize the matched set to, and an array of PageParserTree selectors used to
 transform the matched set to the set of elements to tag. The PageParserTree
 selectors may take advantage of MutationObservers so that the page is watched
 for changes and new elements can be found on the page before the browser has
-rendered them to the screen, preventing any lag between the user seeing an
-element on the screen and a browser extension reacting to its presence and
-enhancing it for example.
+rendered them to the screen. This means a browser extension can react to an
+element and enhance it before it has appeared on the screen, preventing any
+visible after-load pop-in effect.
 
 Additionally, a "Finder" is an alternate and more adaptable method of
 identifying elements to tag. It may be specified in addition to a "Watcher" to
@@ -36,9 +36,6 @@ called on an interval to look for elements on the page to tag.
 MutationObservers are not used here; there will be a likely user-noticeable
 amount of time between the element appearing on the page and the PageParserTree
 (and therefore your application) reacting to the presence of the element.
-If a Finder is used for a tag that has any Watchers too, then an error will be
-logged if the Finder and all of the Watchers for that tag are inconsistent with
-each other so that they may be fixed.
 
 Finders are best used in addition to Watchers as a fallback-method to pick up
 any elements missed by the Watchers. Watchers tend to be closely tied to the
@@ -48,15 +45,17 @@ developer. Finders are easier to make more robust to variations in the
 structure of the page (you can use the `querySelectorAll` method to find
 elements anywhere on the page matching some rule), but they don't have the
 immediate responsiveness of Watchers. Use of them together creates a graceful
-degradation route when a web application's page structure exhibits unforeseen
-variations.
+degradation route for when a web application's page structure exhibits
+unforeseen variations.
 
 A PageParserTree instance has a `tree` property which is an instance of a
 [TagTree](https://github.com/StreakYC/tag-tree), which has methods such as
 `getAllByTag(tag)` that returns a [LiveSet](https://github.com/StreakYC/live-set)
 of TagTreeNodes. A TagTreeNode has a `getValue()` method to get the element it
 contains, and `getParent()` and `getOwnedByTag(tag)` method to retrieve related
-TagTreeNodes as described in TagTree's documentation and demonstrated below:
+TagTreeNodes as described in TagTree's documentation.
+
+## Example
 
 ```js
 import PageParserTree from 'page-parser-tree';
@@ -138,7 +137,7 @@ allMessages.subscribe(changes => {
 
 // If we just want to call some callbacks for every present and future message
 // and when they're removed, then we can use a handy helper from the LiveSet
-// library.
+// library:
 import toValueObservable from 'live-set/toValueObservable';
 
 toValueObservable(allMessages).subscribe(({value, removal}) => {
@@ -358,6 +357,23 @@ This selector uses `console.log` to log every time an element becomes part of
 the matched set at the given position in the chain. The given string will be
 part of the logged message. This is intended for use in development while
 debugging.
+
+## Usage
+
+PageParserTree may be installed with npm. We recommend you save the dependency
+in your package.json and pin the major version by using the command `npm install --save page-parser-tree`.
+
+PageParserTree may be used in browsers via a CommonJS bundler such as
+Browserify or Webpack.
+
+Some of the examples on this page use ES2015 features. ES2015 features aren't
+required to use PageParserTree, though if you're writing a browser extension
+targeting a modern browser, then you can probably use `let`/`const`
+declarations and arrow functions without issue. Other features in the examples
+including `import` statements may require Babel to be used. We've had good
+experiences with Babel and highly recommend it, but if you aren't using it then
+know that you can usually swap `import X from 'foo';` with
+`const X = require('foo');`.
 
 ## Types
 
