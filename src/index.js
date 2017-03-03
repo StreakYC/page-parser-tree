@@ -80,6 +80,10 @@ export default class PageParserTree {
     liveSet: LiveSet<LiveSet<ElementContext>>;
     controller: LiveSetController<LiveSet<ElementContext>>;
     ecSet: LiveSet<ElementContext>;
+    subscription: LiveSetSubscription;
+
+    // all subscriptions for tags that list this one as a watcher source
+    destinationSubs: LiveSetSubscription[];
   }>;
 
   _logError: (err: Error, el: ?HTMLElement) => void;
@@ -129,6 +133,8 @@ export default class PageParserTree {
       tagsWithWatchers.add(watcher.tag);
     });
 
+    let setupComplete = false;
+
     this._ecSources = new Map(this._tagsList.map(({tag}) => {
       const tagOptions = this._tagOptions.get(tag);
       if (!tagOptions) throw new Error();
@@ -142,6 +148,8 @@ export default class PageParserTree {
         watcherFinderMerger(
           this.tree, tag, tagOptions, combinedWatcherSet, finder, this._logError
         ) : combinedWatcherSet || LiveSet.constant(new Set());
+
+      const destinationSubs = [];
 
       const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
 
@@ -215,6 +223,12 @@ export default class PageParserTree {
                   }
                 }
               });
+
+              if (setupComplete) {
+                destinationSubs.forEach(sub => {
+                  sub.pullChanges();
+                });
+              }
             },
             error(err) {
               controller.error(err);
@@ -226,29 +240,44 @@ export default class PageParserTree {
         }
       });
 
-      this._subscriptions.push(ecSet.subscribe({}));
+      const subscription = ecSet.subscribe({});
+      this._subscriptions.push(subscription);
 
-      return [tag, {liveSet, controller, ecSet}];
+      return [tag, {liveSet, controller, ecSet, subscription, destinationSubs}];
     }));
 
     this._options.watchers.forEach(({sources, selectors, tag}) => {
-      const sourceSets = sources.map(tag => {
-        if (!tag) return this._rootMatchedSet;
-        const entry = this._ecSources.get(tag);
-        if (!entry) throw new Error('Unknown source: '+tag);
-        return entry.ecSet;
+      const ecEntry = this._ecSources.get(tag);
+      if (!ecEntry) throw new Error();
+
+      const {subscription} = ecEntry;
+
+      const sourceSets = sources.map(sourceTag => {
+        if (!sourceTag) return this._rootMatchedSet;
+        const sourceEntry = this._ecSources.get(sourceTag);
+        if (!sourceEntry) throw new Error('Unknown source: '+sourceTag);
+
+        const {destinationSubs} = sourceEntry;
+        sources.forEach(source => {
+          if (source == null) return;
+          if (destinationSubs.indexOf(subscription) === -1) {
+            destinationSubs.push(subscription);
+          }
+        });
+
+        return sourceEntry.ecSet;
       });
       const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
       const transformer = makeLiveSetTransformerFromSelectors(selectors);
 
-      const ecEntry = this._ecSources.get(tag);
-      if (!ecEntry) throw new Error();
       ecEntry.controller.add(transformer(sourceSet));
     });
 
     this._subscriptions.forEach(sub => {
       sub.pullChanges();
     });
+
+    setupComplete = true;
   }
 
   _dumpWithoutEnd() {
