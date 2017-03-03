@@ -702,6 +702,113 @@ test('$watch', async () => {
   page.dump();
 });
 
+xtest('adding and remove element with children does not break', async () => {
+  const logError = jest.fn();
+  const page = new PageParserTree(document, {
+    logError,
+    tags: {
+      'comment': {ownedBy: ['comment']},
+      'replySection': {ownedBy: ['comment']}
+    },
+    watchers: [
+      {sources: [null], tag: 'commentSection', selectors: [
+        'body',
+        '.page-outer',
+        '.article-comments'
+      ]},
+      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
+        {$or: [
+          [
+            '.comment2',
+            '.comment2-inner'
+          ], [
+            '.comment'
+          ]
+        ]}
+      ]},
+      {sources: ['comment'], tag: 'replySection', selectors: [
+        '.replies'
+      ]},
+    ],
+    finders: {}
+  });
+
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
+
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'SECOND',
+      'THIRD',
+      'FIRST',
+      'reply to second',
+      'reply to you'
+    ]);
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+
+  const thirdComment = Array.from(allComments.values()).filter(node =>
+    getCommentNodeTextValue(node) === 'THIRD'
+  )[0];
+  const thirdCommentEl = thirdComment.getValue();
+
+  const thirdCommentParentEl: any = thirdCommentEl.parentElement;
+
+  thirdCommentEl.remove();
+  emitMutation(thirdCommentParentEl, {
+    removedNodes: [thirdCommentEl]
+  });
+
+  await delay(0);
+
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'SECOND',
+      'FIRST',
+      'reply to second',
+      'reply to you'
+    ]);
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+
+  // Re-add the element, but then synchronously remove its parent afterward.
+  thirdCommentParentEl.appendChild(thirdCommentEl);
+  emitMutation(thirdCommentParentEl, {
+    addedNodes: [thirdCommentEl]
+  });
+  thirdCommentEl.remove();
+  emitMutation(thirdCommentParentEl, {
+    removedNodes: [thirdCommentEl]
+  });
+
+  await delay(0);
+
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+      'foo bar',
+      'bar foo',
+      'SECOND',
+      'FIRST',
+      'reply to second',
+      'reply to you',
+    ]);
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
+
+  expect(allComments.isEnded()).toBe(false);
+
+  page.dump();
+
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
+    .toEqual([
+    ]);
+
+  expect(allComments.isEnded()).toBe(true);
+});
+
 test('replaceOptions throws if tags change', () => {
   const page = new PageParserTree(document, {
     tags: {

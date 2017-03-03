@@ -188,14 +188,18 @@ export default class PageParserTree {
               setValues(s);
             },
             next: changes => {
+              const ecsToTagValues = ecsToTag.values();
+
               changes.forEach(change => {
-                if (change.type === 'add') {
+                // Don't process adds of elements that are removed by a later
+                // change in this notification.
+                if (change.type === 'add' && ecsToTagValues.has(change.value)) {
                   const newValue = cb(change.value);
                   m.set(change.value, newValue);
                   controller.add(newValue);
                 } else if (change.type === 'remove') {
                   const newValue = m.get(change.value);
-                  if (!newValue) throw new Error('removed item not in liveset');
+                  if (!newValue) return;
                   m.delete(change.value);
                   controller.remove(newValue);
 
