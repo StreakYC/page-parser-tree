@@ -89,13 +89,15 @@ export default function makeFilteredEcChildLiveSet(ec: ElementContext, selector:
       const observer = new MutationObserver(changesHandler);
       observer.observe(element, {childList: true});
 
+      const changePullers = [() => {
+        changesHandler(observer.takeRecords());
+      }];
+
       return {
         unsubscribe() {
           observer.disconnect();
         },
-        pullChanges() {
-          changesHandler(observer.takeRecords());
-        }
+        getChangePullers: () => changePullers
       };
     }
   });

@@ -225,9 +225,7 @@ export default class PageParserTree {
               });
 
               if (setupComplete) {
-                destinationSubs.forEach(sub => {
-                  sub.pullChanges();
-                });
+                LiveSet.pullMultipleSubscriptionChanges(destinationSubs);
               }
             },
             error(err) {
@@ -273,9 +271,7 @@ export default class PageParserTree {
       ecEntry.controller.add(transformer(sourceSet));
     });
 
-    this._subscriptions.forEach(sub => {
-      sub.pullChanges();
-    });
+    LiveSet.pullMultipleSubscriptionChanges(this._subscriptions);
 
     setupComplete = true;
   }

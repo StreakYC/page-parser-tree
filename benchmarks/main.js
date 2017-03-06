@@ -2,6 +2,8 @@
 /* @flow */
 /* eslint-disable no-console */
 
+process.env.NODE_ENV = 'production';
+
 const document = require('jsdom').jsdom(undefined);
 global.__proto__ = document.defaultView;
 

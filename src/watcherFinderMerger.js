@@ -138,9 +138,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: 
           if (idleHandle != null) global.cancelIdleCallback(idleHandle);
           if (sub) sub.unsubscribe();
         },
-        pullChanges() {
-          if (sub) sub.pullChanges();
-        }
+        getChangePullers: () => sub ? sub.getChangePullers() : []
       };
     }
   });

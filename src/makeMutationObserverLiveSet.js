@@ -50,13 +50,15 @@ export default function makeMutationObserverLiveSet(
       const observer = new MutationObserver(changesHandler);
       observer.observe(element, {attributes: true, attributeFilter});
 
+      const changePullers = [() => {
+        changesHandler(observer.takeRecords());
+      }];
+
       return {
         unsubscribe() {
           observer.disconnect();
         },
-        pullChanges() {
-          changesHandler(observer.takeRecords());
-        }
+        getChangePullers: () => changePullers
       };
     }
   });
