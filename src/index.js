@@ -188,12 +188,20 @@ export default class PageParserTree {
               setValues(s);
             },
             next: changes => {
-              const ecsToTagValues = ecsToTag.values();
+              const ecsRemovedInNotification = new Set();
+              if (changes.length > 1) {
+                changes.forEach(change => {
+                  if (change.type === 'remove') {
+                    ecsRemovedInNotification.add(change.value);
+                  }
+                });
+              }
 
               changes.forEach(change => {
-                // Don't process adds of elements that are removed by a later
-                // change in this notification.
-                if (change.type === 'add' && ecsToTagValues.has(change.value)) {
+                if (change.type === 'add') {
+                  // Don't process adds of elements that are removed by a later
+                  // change in this notification.
+                  if (ecsRemovedInNotification.has(change.value)) return;
                   const newValue = cb(change.value);
                   m.set(change.value, newValue);
                   controller.add(newValue);
