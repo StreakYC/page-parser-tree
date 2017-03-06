@@ -711,7 +711,7 @@ test('$watch', async () => {
   page.dump();
 });
 
-xtest('adding and remove element with children does not break', async () => {
+test('adding and remove element with children does not break', async () => {
   const logError = jest.fn();
   const page = new PageParserTree(document, {
     logError,
