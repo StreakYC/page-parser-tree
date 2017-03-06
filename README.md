@@ -55,6 +55,13 @@ of TagTreeNodes. A TagTreeNode has a `getValue()` method to get the element it
 contains, and `getParent()` and `getOwnedByTag(tag)` method to retrieve related
 TagTreeNodes as described in TagTree's documentation.
 
+## Known Issues
+
+This library is still under development. Currently it has a bug that when a
+tagged element is first announced through a notification, any elements within
+it have not been checked and tagged yet if possible by that point. This
+behavior is not intended.
+
 ## Example
 
 ```js
