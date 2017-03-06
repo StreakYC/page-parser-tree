@@ -1,6 +1,6 @@
 {
   "name": "page-parser-tree",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Library to find elements in a dynamic web page",
   "main": "js/index.js",
   "scripts": {
