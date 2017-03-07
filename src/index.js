@@ -3,7 +3,7 @@
 import LiveSet from 'live-set';
 import type {LiveSetController, LiveSetSubscription} from 'live-set';
 import liveSetMerge from 'live-set/merge';
-import liveSetFlatMap from 'live-set/flatMap';
+import liveSetFlatMapR from 'live-set/flatMapR';
 import {TagTree} from 'tag-tree';
 import type {TagTreeController, TagTreeNode} from 'tag-tree';
 
@@ -136,7 +136,7 @@ export default class PageParserTree {
 
       const {liveSet, controller} = LiveSet.active();
       const combinedWatcherSet = tagsWithWatchers.has(tag) ?
-        liveSetFlatMap(liveSet, s => s) : null;
+        liveSetFlatMapR(liveSet, s => s) : null;
       const finder = this._options.finders[tag];
       const ecsToTag = finder ?
         watcherFinderMerger(
