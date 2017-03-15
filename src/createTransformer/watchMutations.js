@@ -44,6 +44,9 @@ export default function watchMutations(input: LiveSet<ElementContext>, attribute
         const entry = entries.get(ec);
         if (!entry) throw new Error('Should not happen: Unseen ElementContext removed');
         entry.mo.disconnect();
+        if (entry.passed) {
+          controller.remove(ec);
+        }
         entries.delete(ec);
       }
 
