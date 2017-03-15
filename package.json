@@ -4,7 +4,7 @@
   "description": "Library to find elements in a dynamic web page",
   "main": "js/index.js",
   "scripts": {
-    "prepare": "babel -s inline -d js/ src/ --ignore '*.test.*' && flow-copy-source -v src js --ignore '*.test.*'",
+    "prepare": "babel -s inline -d js/ src/ --ignore '**/*.test.*' && flow-copy-source -v src js --ignore '**/*.test.*'",
     "test": "npm run lint && npm run flow_check && jest",
     "flow_check": "flow check",
     "lint": "eslint .",
