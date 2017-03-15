@@ -4,9 +4,9 @@ import LiveSet from 'live-set';
 import type Scheduler from 'live-set/Scheduler';
 import matchesSelector from 'matches-selector-ng';
 
-import type {ElementContext} from '.';
+import type {ElementContext} from '..';
 
-export default function makeMutationObserverLiveSet(
+export default function createMutationObserverLiveSet(
   scheduler: Scheduler,
   ec: ElementContext,
   attributeFilter: string[],

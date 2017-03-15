@@ -4,9 +4,9 @@ import LiveSet from 'live-set';
 import type Scheduler from 'live-set/Scheduler';
 import matchesSelector from 'matches-selector-ng';
 
-import type {ElementContext} from '.';
+import type {ElementContext} from '..';
 
-export default function makeFilteredEcChildLiveSet(scheduler: Scheduler, ec: ElementContext, selector: string): LiveSet<ElementContext> {
+export default function createFilteredEcChildLiveSet(scheduler: Scheduler, ec: ElementContext, selector: string): LiveSet<ElementContext> {
   return new LiveSet({
     scheduler,
     read() {

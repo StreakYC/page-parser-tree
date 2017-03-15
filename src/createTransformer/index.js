@@ -6,26 +6,26 @@ import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
 import liveSetFlatMap from 'live-set/flatMap';
-import makeFilteredEcChildLiveSet from './makeFilteredEcChildLiveSet';
-import makeMutationObserverLiveSet from './makeMutationObserverLiveSet';
+import createFilteredEcChildLiveSet from './createFilteredEcChildLiveSet';
+import createMutationObserverLiveSet from './createMutationObserverLiveSet';
 import type LiveSet from 'live-set';
-import type {Selector, ElementContext} from './index';
+import type {Selector, ElementContext} from '..';
 
-export default function makeLiveSetTransformerFromSelectors(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
+export default function createTransformer(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const itemString = item;
-      const flatMapFn = ec => makeFilteredEcChildLiveSet(scheduler, ec, itemString);
+      const flatMapFn = ec => createFilteredEcChildLiveSet(scheduler, ec, itemString);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$or) {
-      const transformers = item.$or.map(s => makeLiveSetTransformerFromSelectors(scheduler, s));
+      const transformers = item.$or.map(s => createTransformer(scheduler, s));
       return liveSet =>
         liveSetMerge(transformers.map(transformer =>
           transformer(liveSet)
         ));
     } else if (item.$watch) {
       const {attributeFilter, cond} = item.$watch;
-      const flatMapFn = ec => makeMutationObserverLiveSet(scheduler, ec, attributeFilter, cond);
+      const flatMapFn = ec => createMutationObserverLiveSet(scheduler, ec, attributeFilter, cond);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$log) {
       const {$log} = item;

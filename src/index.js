@@ -9,7 +9,7 @@ import {TagTree} from 'tag-tree';
 import type {TagTreeController, TagTreeNode} from 'tag-tree';
 
 import watcherFinderMerger from './watcherFinderMerger';
-import makeLiveSetTransformerFromSelectors from './makeLiveSetTransformerFromSelectors';
+import createTransformer from './createTransformer';
 
 export type Selector =
   string
@@ -251,7 +251,7 @@ export default class PageParserTree {
         return entry.ecSet;
       });
       const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
-      const transformer = makeLiveSetTransformerFromSelectors(this._scheduler, selectors);
+      const transformer = createTransformer(this._scheduler, selectors);
 
       const ecEntry = this._ecSources.get(tag);
       if (!ecEntry) throw new Error();
