@@ -17,16 +17,6 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
       const outputEcs: Map<HTMLElement, ElementContext> = new Map();
 
       function newEc(ec: ElementContext) {
-        const {children} = ec.el;
-        for (let i=0,len=children.length; i<len; i++) {
-          const child = children[i];
-          if (condFn(child)) {
-            const childEc = {el: child, parents: ec.parents};
-            outputEcs.set(child, childEc);
-            controller.add(childEc);
-          }
-        }
-
         function addedNode(child: Node) {
           if (child.nodeType !== 1) return;
           /*:: if (!(child instanceof HTMLElement)) throw new Error() */
@@ -76,6 +66,9 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
             });
           }
         }
+
+        Array.prototype.forEach.call(ec.el.children, addedNode);
+
         const observer = new MutationObserver(changesHandler);
         observer.observe(ec.el, {childList: true});
 
