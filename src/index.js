@@ -4,6 +4,7 @@ import LiveSet from 'live-set';
 import type {LiveSetController, LiveSetSubscription} from 'live-set';
 import liveSetMerge from 'live-set/merge';
 import liveSetFlatMapR from 'live-set/flatMapR';
+import Scheduler from 'live-set/Scheduler';
 import {TagTree} from 'tag-tree';
 import type {TagTreeController, TagTreeNode} from 'tag-tree';
 
@@ -73,6 +74,7 @@ function makeTagOptions(options: PageParserTreeOptions) {
 
 export default class PageParserTree {
   tree: TagTree<HTMLElement>;
+  _scheduler = new Scheduler();
   _treeController: TagTreeController<HTMLElement>;
 
   _rootMatchedSet: LiveSet<ElementContext>;
@@ -118,7 +120,7 @@ export default class PageParserTree {
     this._rootMatchedSet = LiveSet.constant(new Set([{
       el: this.tree.getValue(),
       parents: [{tag: null, node: this.tree}]
-    }]));
+    }]), {scheduler: this._scheduler});
 
     this._setupWatchersAndFinders();
   }
@@ -134,14 +136,15 @@ export default class PageParserTree {
       if (!tagOptions) throw new Error();
       const ownedBy = new Set(tagOptions.ownedBy || []);
 
-      const {liveSet, controller} = LiveSet.active();
+      const {liveSet, controller} = LiveSet.active(null, {scheduler: this._scheduler});
       const combinedWatcherSet = tagsWithWatchers.has(tag) ?
         liveSetFlatMapR(liveSet, s => s) : null;
       const finder = this._options.finders[tag];
       const ecsToTag = finder ?
         watcherFinderMerger(
-          this.tree, tag, tagOptions, combinedWatcherSet, finder, this._logError
-        ) : combinedWatcherSet || LiveSet.constant(new Set());
+          this._scheduler, this.tree, tag, tagOptions,
+          combinedWatcherSet, finder, this._logError
+        ) : combinedWatcherSet || LiveSet.constant(new Set(), {scheduler: this._scheduler});
 
       const elementsToNodes: Map<HTMLElement, TagTreeNode<HTMLElement>> = new Map();
 
@@ -158,6 +161,7 @@ export default class PageParserTree {
       }
 
       const ecSet = new LiveSet({
+        scheduler: this._scheduler,
         read() {
           throw new Error();
         },
@@ -247,16 +251,14 @@ export default class PageParserTree {
         return entry.ecSet;
       });
       const sourceSet = sourceSets.length === 1 ? sourceSets[0] : liveSetMerge(sourceSets);
-      const transformer = makeLiveSetTransformerFromSelectors(selectors);
+      const transformer = makeLiveSetTransformerFromSelectors(this._scheduler, selectors);
 
       const ecEntry = this._ecSources.get(tag);
       if (!ecEntry) throw new Error();
       ecEntry.controller.add(transformer(sourceSet));
     });
 
-    this._subscriptions.forEach(sub => {
-      sub.pullChanges();
-    });
+    this._scheduler.flush();
   }
 
   _dumpWithoutEnd() {

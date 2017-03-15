@@ -1,11 +1,13 @@
 /* @flow */
 
 import LiveSet from 'live-set';
+import type Scheduler from 'live-set/Scheduler';
 import matchesSelector from 'matches-selector-ng';
 
 import type {ElementContext} from '.';
 
 export default function makeMutationObserverLiveSet(
+  scheduler: Scheduler,
   ec: ElementContext,
   attributeFilter: string[],
   cond: string | (el: HTMLElement) => boolean
@@ -17,6 +19,7 @@ export default function makeMutationObserverLiveSet(
     () => _cond(element);
 
   return new LiveSet({
+    scheduler,
     read() {
       const s = new Set();
       if (checkElement()) {

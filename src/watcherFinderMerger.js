@@ -1,11 +1,13 @@
 /* @flow */
 
 import LiveSet from 'live-set';
+import type Scheduler from 'live-set/Scheduler';
 import type {TagTree} from 'tag-tree';
 import type {TagOptions, ElementContext, Finder} from '.';
 
-export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: string, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
+export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTree<HTMLElement>, tag: string, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
   return new LiveSet({
+    scheduler,
     read() {
       throw new Error('Should not happen');
     },
@@ -104,6 +106,7 @@ export default function watcherFinderMerger(tagTree: TagTree<HTMLElement>, tag: 
             }
           });
 
+          scheduler.flush();
           scheduleFinder();
         };
 

@@ -165,9 +165,9 @@ test('watchers', async () => {
     .toEqual([
       'foo bar',
       'bar foo',
+      'FIRST',
       'SECOND',
       'THIRD',
-      'FIRST',
       'reply to second',
       'reply to you'
     ]);
@@ -184,9 +184,9 @@ test('watchers', async () => {
 
   expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
     .toEqual([
+      'FIRST',
       'SECOND',
       'THIRD',
-      'FIRST'
     ]);
 
   {
@@ -336,9 +336,8 @@ test('watchers and finders for separate tags', async () => {
   await new Promise((resolve, reject) => {
     allTopNav.subscribe({next() {
       try {
-        // TODO fix bug where things aren't immediately consistent.
-        // expect(allTopNav.values().size).toBe(1);
-        // expect(allNavLinks.values().size).toBe(3);
+        expect(allTopNav.values().size).toBe(1);
+        expect(allNavLinks.values().size).toBe(3);
       } catch (err) {
         reject(err);
       }
@@ -346,8 +345,6 @@ test('watchers and finders for separate tags', async () => {
     }, error: reject, complete: reject});
   });
 
-  expect(allTopNav.values().size).toBe(1);
-  expect(allNavLinks.values().size).toBe(3);
   page.dump();
 });
 
@@ -749,9 +746,9 @@ test('adding and remove element with children does not break', async () => {
     .toEqual([
       'foo bar',
       'bar foo',
+      'FIRST',
       'SECOND',
       'THIRD',
-      'FIRST',
       'reply to second',
       'reply to you'
     ]);
@@ -775,8 +772,8 @@ test('adding and remove element with children does not break', async () => {
     .toEqual([
       'foo bar',
       'bar foo',
-      'SECOND',
       'FIRST',
+      'SECOND',
       'reply to second',
       'reply to you'
     ]);
@@ -798,8 +795,8 @@ test('adding and remove element with children does not break', async () => {
     .toEqual([
       'foo bar',
       'bar foo',
-      'SECOND',
       'FIRST',
+      'SECOND',
       'reply to second',
       'reply to you',
     ]);

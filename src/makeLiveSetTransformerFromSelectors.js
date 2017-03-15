@@ -1,6 +1,7 @@
 /* @flow */
 
 import t from 'transducers.js';
+import type Scheduler from 'live-set/Scheduler';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
@@ -10,21 +11,21 @@ import makeMutationObserverLiveSet from './makeMutationObserverLiveSet';
 import type LiveSet from 'live-set';
 import type {Selector, ElementContext} from './index';
 
-export default function makeLiveSetTransformerFromSelectors(selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
+export default function makeLiveSetTransformerFromSelectors(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const itemString = item;
-      const flatMapFn = ec => makeFilteredEcChildLiveSet(ec, itemString);
+      const flatMapFn = ec => makeFilteredEcChildLiveSet(scheduler, ec, itemString);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$or) {
-      const transformers = item.$or.map(makeLiveSetTransformerFromSelectors);
+      const transformers = item.$or.map(s => makeLiveSetTransformerFromSelectors(scheduler, s));
       return liveSet =>
         liveSetMerge(transformers.map(transformer =>
           transformer(liveSet)
         ));
     } else if (item.$watch) {
       const {attributeFilter, cond} = item.$watch;
-      const flatMapFn = ec => makeMutationObserverLiveSet(ec, attributeFilter, cond);
+      const flatMapFn = ec => makeMutationObserverLiveSet(scheduler, ec, attributeFilter, cond);
       return liveSet => liveSetFlatMap(liveSet, flatMapFn);
     } else if (item.$log) {
       const {$log} = item;

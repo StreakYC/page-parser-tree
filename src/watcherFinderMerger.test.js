@@ -80,7 +80,7 @@ test('listen with watcher', async () => {
   const {liveSet: input, controller} = LiveSet.active(new Set(watcherValues.slice(0, 1)));
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, null, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, input, null, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -110,7 +110,7 @@ test('listen with finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, null, finder, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, null, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual([]);
@@ -155,7 +155,7 @@ test('listen with consistent watcher and finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -184,7 +184,7 @@ test('listen with bad watcher and good finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -244,7 +244,7 @@ test('listen with good watcher and bad finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
   expect(Array.from(output.values()).map(serializeEc)).toEqual(watcherValues.slice(0, 1).map(serializeEc));
@@ -276,7 +276,7 @@ test('listen watcher finds element after finder', async () => {
   };
 
   const logError = jest.fn(), next = jest.fn(), complete = jest.fn();
-  const output = watcherFinderMerger(tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
+  const output = watcherFinderMerger(LiveSet.defaultScheduler, tagTree, 'comment', {ownedBy: ['comment']}, input, finder, logError);
 
   output.subscribe({next, complete});
 

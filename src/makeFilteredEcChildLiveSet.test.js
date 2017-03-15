@@ -2,6 +2,7 @@
 
 import makeFilteredEcChildLiveSet from './makeFilteredEcChildLiveSet';
 
+import LiveSet from 'live-set';
 import delay from 'pdelay';
 import emitMutation from '../testlib/MockMutationObserver';
 import tagAndClassName from '../testlib/tagAndClassName';
@@ -15,7 +16,7 @@ test('read', () => {
   div.appendChild(divB);
   div.appendChild(divC);
   const parents = [];
-  const liveSet = makeFilteredEcChildLiveSet({el: div, parents}, 'div:not(.ignore)');
+  const liveSet = makeFilteredEcChildLiveSet(LiveSet.defaultScheduler, {el: div, parents}, 'div:not(.ignore)');
   liveSet.values().forEach(ec => {
     expect(ec.parents).toBe(parents);
   });
@@ -34,7 +35,7 @@ test('listen', async () => {
   div.appendChild(divA);
   div.appendChild(divIgnoreA);
   const parents = [];
-  const liveSet = makeFilteredEcChildLiveSet({el: div, parents}, 'div:not(.ignore)');
+  const liveSet = makeFilteredEcChildLiveSet(LiveSet.defaultScheduler, {el: div, parents}, 'div:not(.ignore)');
 
   const next = jest.fn();
   liveSet.subscribe({next});
@@ -64,7 +65,7 @@ test('listen, pullChanges', async () => {
   const divIgnoreB = Object.assign(document.createElement('div'), {className: 'bb ignore'});
   div.appendChild(divA);
   div.appendChild(divIgnoreA);
-  const liveSet = makeFilteredEcChildLiveSet({el: div, parents: []}, 'div:not(.ignore)');
+  const liveSet = makeFilteredEcChildLiveSet(LiveSet.defaultScheduler, {el: div, parents: []}, 'div:not(.ignore)');
 
   const next = jest.fn();
   const sub = liveSet.subscribe({next});
@@ -97,7 +98,7 @@ test('do not reprocess nodes removed and re-added immediately', async () => {
   const divC = Object.assign(document.createElement('div'), {className: 'c'});
   div.appendChild(divA);
   const parents = [];
-  const liveSet = makeFilteredEcChildLiveSet({el: div, parents}, 'div:not(.ignore)');
+  const liveSet = makeFilteredEcChildLiveSet(LiveSet.defaultScheduler, {el: div, parents}, 'div:not(.ignore)');
 
   const next = jest.fn();
   liveSet.subscribe({next});

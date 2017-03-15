@@ -20,7 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "babel-runtime": "^6.22.0",
-    "live-set": "^0.4.0",
+    "live-set": "^0.4.1",
     "matches-selector-ng": "^1.0.0",
     "tag-tree": "^0.4.0",
     "transducers.js": "^0.3.2"
