@@ -6,21 +6,19 @@ import type Scheduler from 'live-set/Scheduler';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
-import liveSetFlatMap from 'live-set/flatMap';
 
 import createCssFn from './createCssFn';
 
 import watchMutations from './watchMutations';
-import createFilteredEcChildLiveSet from './createFilteredEcChildLiveSet';
+import watchFilteredChildren from './watchFilteredChildren';
 
 import type {Selector, ElementContext} from '..';
 
 export default function createTransformer(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
-      const itemString = item;
-      const flatMapFn = ec => createFilteredEcChildLiveSet(scheduler, ec, itemString);
-      return liveSet => liveSetFlatMap(liveSet, flatMapFn);
+      const condFn = createCssFn(item);
+      return liveSet => watchFilteredChildren(liveSet, condFn);
     } else if (item.$or) {
       const transformers = item.$or.map(s => createTransformer(scheduler, s));
       return liveSet =>

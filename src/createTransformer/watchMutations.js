@@ -71,6 +71,8 @@ export default function watchMutations(input: LiveSet<ElementContext>, attribute
         },
         pullChanges() {
           sub.pullChanges();
+          // Don't bother doing observer.takeRecords(), we don't need that in
+          // PageParserTree for how we use pullChanges().
         }
       };
     }
