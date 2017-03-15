@@ -1,14 +1,18 @@
 /* @flow */
 
 import t from 'transducers.js';
+import type LiveSet from 'live-set';
 import type Scheduler from 'live-set/Scheduler';
 import liveSetTransduce from 'live-set/transduce';
 import liveSetFilter from 'live-set/filter';
 import liveSetMerge from 'live-set/merge';
 import liveSetFlatMap from 'live-set/flatMap';
+
+import createCssFn from './createCssFn';
+
+import watchMutations from './watchMutations';
 import createFilteredEcChildLiveSet from './createFilteredEcChildLiveSet';
-import createMutationObserverLiveSet from './createMutationObserverLiveSet';
-import type LiveSet from 'live-set';
+
 import type {Selector, ElementContext} from '..';
 
 export default function createTransformer(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
@@ -25,8 +29,8 @@ export default function createTransformer(scheduler: Scheduler, selectors: Array
         ));
     } else if (item.$watch) {
       const {attributeFilter, cond} = item.$watch;
-      const flatMapFn = ec => createMutationObserverLiveSet(scheduler, ec, attributeFilter, cond);
-      return liveSet => liveSetFlatMap(liveSet, flatMapFn);
+      const condFn = typeof cond === 'function' ? cond : createCssFn(cond);
+      return liveSet => watchMutations(liveSet, attributeFilter, condFn);
     } else if (item.$log) {
       const {$log} = item;
       const filterFn = value => {
