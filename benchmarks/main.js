@@ -2,7 +2,8 @@
 /* @flow */
 /* eslint-disable no-console */
 
-const document = require('jsdom').jsdom(undefined);
+const {JSDOM} = require('jsdom');
+const document = new JSDOM('').window.document;
 global.__proto__ = document.defaultView;
 
 import emitMutation from '../testlib/MockMutationObserver';
