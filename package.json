@@ -18,6 +18,14 @@
   ],
   "author": "Chris Cowan <cowan@streak.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StreakYC/page-parser-tree.git"
+  },
+  "bugs": {
+    "url": "https://github.com/StreakYC/page-parser-tree/issues"
+  },
+  "homepage": "https://github.com/StreakYC/page-parser-tree#readme",
   "dependencies": {
     "babel-runtime": "^6.22.0",
     "live-set": "^0.4.1",
