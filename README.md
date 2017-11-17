@@ -384,6 +384,18 @@ experiences with Babel and highly recommend it, but if you aren't using it then
 know that you can usually swap `import X from 'foo';` with
 `const X = require('foo');`.
 
+## Bundling Note
+
+To use this module in browsers, a CommonJS bundler such as Browserify or
+Webpack should be used.
+
+This project may add additional checks in some places if `process.env.NODE_ENV`
+is not set to "production". If you're using Browserify, then setting the
+NODE_ENV environment variable to "production" during build is enough to disable
+these checks. Instructions for other bundlers [can be found in React's
+documentation](https://reactjs.org/docs/optimizing-performance.html#use-the-production-build),
+which uses the same convention.
+
 ## Types
 
 [Flow](https://flowtype.org/) type declarations for this module are included!
