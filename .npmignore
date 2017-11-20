@@ -9,3 +9,4 @@ npm-debug.log
 /flow-typed
 /.flowconfig
 /testlib
+/yarn.lock
