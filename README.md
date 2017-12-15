@@ -408,3 +408,9 @@ produce the Streak CRM browser extension and the
 [InboxSDK](https://www.inboxsdk.com/), a library for integrating with Gmail and
 Inbox by Google, which you should also check out if you're reading this page
 because you're considering writing a browser extension to integrate with them!
+
+While InboxSDK is great for most Gmail/Inbox integrations, Mixmax needed a
+deeper integration, and used page-parser-tree to solve some performance issues
+with their previous implementation. They wrote
+[a blog post](https://mixmax.com/blog/precisely-observing-structural-page-changes)
+about this transition - check it out for some implementation notes!
