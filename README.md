@@ -401,6 +401,12 @@ which uses the same convention.
 [Flow](https://flowtype.org/) type declarations for this module are included!
 If you are using Flow, they won't require any configuration to use.
 
+## Resources
+
+[Mixmax has written a blog post](https://mixmax.com/blog/precisely-observing-structural-page-changes)
+with useful notes about their transition to using page-parser-tree and how it
+solved some performance issues in their browser extension in Gmail.
+
 ## About
 
 PageParserTree was written by us at [Streak](https://www.streak.com/), where we
@@ -408,9 +414,3 @@ produce the Streak CRM browser extension and the
 [InboxSDK](https://www.inboxsdk.com/), a library for integrating with Gmail and
 Inbox by Google, which you should also check out if you're reading this page
 because you're considering writing a browser extension to integrate with them!
-
-While InboxSDK is great for most Gmail/Inbox integrations, Mixmax needed a
-deeper integration, and used page-parser-tree to solve some performance issues
-with their previous implementation. They wrote
-[a blog post](https://mixmax.com/blog/precisely-observing-structural-page-changes)
-about this transition - check it out for some implementation notes!
