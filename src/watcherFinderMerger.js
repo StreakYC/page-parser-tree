@@ -3,7 +3,9 @@
 import LiveSet from 'live-set';
 import type Scheduler from 'live-set/Scheduler';
 import type {TagTree} from 'tag-tree';
-import type {TagOptions, ElementContext, Finder} from '.';
+import type {TagOptions, Finder} from '.';
+
+import type {ElementContext} from './internalTypes';
 
 export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTree<HTMLElement>, tag: string, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
   return new LiveSet({

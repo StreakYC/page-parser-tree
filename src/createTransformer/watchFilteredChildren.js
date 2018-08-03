@@ -2,7 +2,7 @@
 
 import LiveSet from 'live-set';
 
-import type {ElementContext} from '..';
+import type {ElementContext} from '../internalTypes';
 
 export default function watchFilteredChildren(input: LiveSet<ElementContext>, condFn: (el: HTMLElement) => boolean): LiveSet<ElementContext> {
   return new LiveSet({

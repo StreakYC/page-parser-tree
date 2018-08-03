@@ -2,7 +2,7 @@
 
 import LiveSet from 'live-set';
 
-import type {ElementContext} from '..';
+import type {ElementContext} from '../internalTypes';
 
 export default function watchMutations(input: LiveSet<ElementContext>, attributeFilter: string[], condFn: (el: HTMLElement) => boolean): LiveSet<ElementContext> {
   return new LiveSet({

@@ -8,6 +8,8 @@ import Scheduler from 'live-set/Scheduler';
 import {TagTree} from 'tag-tree';
 import type {TagTreeController, TagTreeNode} from 'tag-tree';
 
+import type {NodeTagPair, ElementContext} from './internalTypes';
+
 import watcherFinderMerger from './watcherFinderMerger';
 import createTransformer from './createTransformer';
 
@@ -40,16 +42,6 @@ export type PageParserTreeOptions = {|
   tags: {[tag:string]: TagOptions};
   watchers: Array<Watcher>;
   finders: {[tag:string]: Finder};
-|};
-
-type NodeTagPair = {|
-  tag: ?string;
-  node: TagTreeNode<HTMLElement>;
-|};
-
-export type ElementContext = {|
-  el: HTMLElement;
-  parents: Array<NodeTagPair>;
 |};
 
 function makeTagOptions(options: PageParserTreeOptions) {

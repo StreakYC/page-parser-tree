@@ -12,7 +12,8 @@ import createCssFn from './createCssFn';
 import watchMutations from './watchMutations';
 import watchFilteredChildren from './watchFilteredChildren';
 
-import type {Selector, ElementContext} from '..';
+import type {Selector} from '..';
+import type {ElementContext} from '../internalTypes';
 
 export default function createTransformer(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
