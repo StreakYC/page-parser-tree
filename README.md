@@ -242,7 +242,7 @@ HTMLElements to tag.
 
 A finder object may have an `interval` property controlling how often in
 milliseconds the Finder function is to be called. The `interval` property
-defaults to 5000. The Finder function may be called less often that this
+defaults to 5000. The Finder function may be called less often than this
 depending on page and user activity.
 
 Alternative, `interval` may be a function that returns a number. The function
