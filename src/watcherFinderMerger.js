@@ -218,8 +218,7 @@ function makeElementContext(
   let _cachedParents = null;
   return {
     el,
-    // Hide the getter from Flow because it doesn't support getters yet.
-    /*:: parents: [] || ` */ get parents() /*:: `||function() */ {
+    get parents() {
       if (!_cachedParents) {
         const root = tagTree.getValue();
         const parents = [];
