@@ -2,7 +2,7 @@
 
 import PageParserTree from '.';
 import LiveSet from 'live-set';
-import type {TagTreeNode} from 'tag-tree';
+import type { TagTreeNode } from 'tag-tree';
 import delay from 'pdelay';
 
 import emitMutation from '../testlib/MockMutationObserver';
@@ -94,7 +94,7 @@ function logErrorSummary([err, el]) {
   return [err.message, tagAndClassName(el), content];
 }
 
-function qs(el: HTMLElement|Document, selector: string): HTMLElement {
+function qs(el: HTMLElement | Document, selector: string): HTMLElement {
   const result = el.querySelector(selector);
   if (!result) throw new Error(`Selector failed to find element: ${selector}`);
   return result;
@@ -109,60 +109,70 @@ test('watchers', async () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'topnav', selectors: [
-        'body',
-        'nav'
-      ]},
-      {sources: ['topnav'], tag: 'navLink', selectors: [
-        'div',
-        'a'
-      ]},
-      {sources: ['topnav'], tag: 'navBlahFourLink', selectors: [
-        'div',
-        {$map: el => el.querySelector('a[href="blah"]')},
-        {$filter: el => el.textContent !== 'five'}
-      ]},
-      {sources: [null], tag: 'sidebarItem', selectors: [
-        'body',
-        '.page-sidebar',
-        'div'
-      ]},
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        {$or: [
-          [
-            '.comment2',
-            '.comment2-inner'
-          ], [
-            '.comment'
-          ]
-        ]}
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'topnav',
+        selectors: ['body', 'nav']
+      },
+      {
+        sources: ['topnav'],
+        tag: 'navLink',
+        selectors: ['div', 'a']
+      },
+      {
+        sources: ['topnav'],
+        tag: 'navBlahFourLink',
+        selectors: [
+          'div',
+          { $map: el => el.querySelector('a[href="blah"]') },
+          { $filter: el => el.textContent !== 'five' }
+        ]
+      },
+      {
+        sources: [null],
+        tag: 'sidebarItem',
+        selectors: ['body', '.page-sidebar', 'div']
+      },
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          {
+            $or: [['.comment2', '.comment2-inner'], ['.comment']]
+          }
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
-  expect(Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(x => x.getValue().outerHTML))
-    .toEqual([
-      '<a href="blah">four</a>'
-    ]);
+  expect(
+    Array.from(page.tree.getAllByTag('navBlahFourLink').values()).map(
+      x => x.getValue().outerHTML
+    )
+  ).toEqual(['<a href="blah">four</a>']);
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'bar foo',
       'FIRST',
@@ -170,27 +180,30 @@ test('watchers', async () => {
       'THIRD',
       'reply to second',
       'reply to you'
-    ]);
+    ]
+  );
 
-  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  const topLevelComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = page.tree.getOwnedByTag('comment');
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
-  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
-  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(
+    topLevelComments.values()
+  )[0];
+  const foobarComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'FIRST',
-      'SECOND',
-      'THIRD',
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['FIRST', 'SECOND', 'THIRD']);
 
   {
-    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    const foobarCommentParentElement: any = foobarComment.getValue()
+      .parentElement;
     foobarComment.getValue().remove();
     emitMutation(foobarCommentParentElement, {
       removedNodes: [foobarComment.getValue()]
@@ -199,19 +212,17 @@ test('watchers', async () => {
 
   await delay(0);
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['bar foo']);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['bar foo']
+  );
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual([]);
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
@@ -219,13 +230,13 @@ test('watchers', async () => {
 
   page.dump();
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual([]);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    []
+  );
 
   expect(allComments.isEnded()).toBe(true);
 });
@@ -235,7 +246,7 @@ test('finders', async () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] }
     },
     watchers: [],
     finders: {
@@ -250,9 +261,11 @@ test('finders', async () => {
 
   await delay(20);
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'FIRST',
       'SECOND',
@@ -260,27 +273,30 @@ test('finders', async () => {
       'reply to you',
       'THIRD',
       'bar foo'
-    ]);
+    ]
+  );
 
-  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  const topLevelComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = page.tree.getOwnedByTag('comment');
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
-  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
-  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(
+    topLevelComments.values()
+  )[0];
+  const foobarComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'FIRST',
-      'SECOND',
-      'THIRD'
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['FIRST', 'SECOND', 'THIRD']);
 
   {
-    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    const foobarCommentParentElement: any = foobarComment.getValue()
+      .parentElement;
     foobarComment.getValue().remove();
     emitMutation(foobarCommentParentElement, {
       removedNodes: [foobarComment.getValue()]
@@ -289,19 +305,17 @@ test('finders', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['bar foo']);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['bar foo']
+  );
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual([]);
 
   expect(logError).toHaveBeenCalledTimes(0);
   page.dump();
@@ -321,10 +335,11 @@ test('watchers and finders for separate tags', async () => {
       }
     },
     watchers: [
-      {sources: ['topnav'], tag: 'navLink', selectors: [
-        'div',
-        'a'
-      ]},
+      {
+        sources: ['topnav'],
+        tag: 'navLink',
+        selectors: ['div', 'a']
+      }
     ]
   });
   const allTopNav = page.tree.getAllByTag('topnav');
@@ -334,15 +349,19 @@ test('watchers and finders for separate tags', async () => {
   expect(allNavLinks.values().size).toBe(0);
 
   await new Promise((resolve, reject) => {
-    allTopNav.subscribe({next() {
-      try {
-        expect(allTopNav.values().size).toBe(1);
-        expect(allNavLinks.values().size).toBe(3);
-      } catch (err) {
-        reject(err);
-      }
-      resolve();
-    }, error: reject, complete: reject});
+    allTopNav.subscribe({
+      next() {
+        try {
+          expect(allTopNav.values().size).toBe(1);
+          expect(allNavLinks.values().size).toBe(3);
+        } catch (err) {
+          reject(err);
+        }
+        resolve();
+      },
+      error: reject,
+      complete: reject
+    });
   });
 
   page.dump();
@@ -353,20 +372,26 @@ test('finder finding things watcher misses', async () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        '.comment' // Missing .comment2 handling
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          '.comment' // Missing .comment2 handling
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {
       comment: {
@@ -383,14 +408,26 @@ test('finder finding things watcher misses', async () => {
   await delay(20);
 
   const expectedErrorsSummary = [
-    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment2-inner', 'SECOND'],
-    ['PageParserTree(comment) finder found element missed by watcher', 'div.comment2-inner', 'THIRD'],
+    [
+      'PageParserTree(comment) finder found element missed by watcher',
+      'div.comment2-inner',
+      'SECOND'
+    ],
+    [
+      'PageParserTree(comment) finder found element missed by watcher',
+      'div.comment2-inner',
+      'THIRD'
+    ]
   ];
-  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(
+    expectedErrorsSummary
+  );
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'bar foo',
       'FIRST',
@@ -398,27 +435,30 @@ test('finder finding things watcher misses', async () => {
       'reply to second',
       'reply to you',
       'THIRD'
-    ]);
+    ]
+  );
 
-  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  const topLevelComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = page.tree.getOwnedByTag('comment');
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
-  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
-  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(
+    topLevelComments.values()
+  )[0];
+  const foobarComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'FIRST',
-      'SECOND',
-      'THIRD'
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['FIRST', 'SECOND', 'THIRD']);
 
   {
-    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    const foobarCommentParentElement: any = foobarComment.getValue()
+      .parentElement;
     foobarComment.getValue().remove();
     emitMutation(foobarCommentParentElement, {
       removedNodes: [foobarComment.getValue()]
@@ -427,21 +467,21 @@ test('finder finding things watcher misses', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['bar foo']);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['bar foo']
+  );
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual([]);
 
-  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(
+    expectedErrorsSummary
+  );
   page.dump();
 });
 
@@ -450,27 +490,28 @@ test('watcher finding things finder misses', async () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        {$or: [
-          [
-            '.comment'
-          ], [
-            '.comment2',
-            '.comment2-inner'
-          ]
-        ]}
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          {
+            $or: [['.comment'], ['.comment2', '.comment2-inner']]
+          }
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {
       comment: {
@@ -486,9 +527,11 @@ test('watcher finding things finder misses', async () => {
 
   await delay(20);
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'bar foo',
       'FIRST',
@@ -496,27 +539,30 @@ test('watcher finding things finder misses', async () => {
       'THIRD',
       'reply to second',
       'reply to you'
-    ]);
+    ]
+  );
 
-  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  const topLevelComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = page.tree.getOwnedByTag('comment');
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
-  const foobarComment: TagTreeNode<HTMLElement> = Array.from(topLevelComments.values())[0];
-  const foobarComments: LiveSet<TagTreeNode<HTMLElement>> = foobarComment.getOwnedByTag('comment');
+  const foobarComment: TagTreeNode<HTMLElement> = Array.from(
+    topLevelComments.values()
+  )[0];
+  const foobarComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = foobarComment.getOwnedByTag('comment');
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'FIRST',
-      'SECOND',
-      'THIRD'
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['FIRST', 'SECOND', 'THIRD']);
 
   {
-    const foobarCommentParentElement: any = foobarComment.getValue().parentElement;
+    const foobarCommentParentElement: any = foobarComment.getValue()
+      .parentElement;
     foobarComment.getValue().remove();
     emitMutation(foobarCommentParentElement, {
       removedNodes: [foobarComment.getValue()]
@@ -525,25 +571,33 @@ test('watcher finding things finder misses', async () => {
 
   await delay(20);
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['bar foo']);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'bar foo'
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['bar foo']
+  );
 
-  expect(Array.from(foobarComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(
+    Array.from(foobarComments.values()).map(getCommentNodeTextValue)
+  ).toEqual([]);
 
   const expectedErrorsSummary = [
-    ['PageParserTree(comment) watcher found element missed by finder', 'div.comment2-inner', 'SECOND'],
-    ['PageParserTree(comment) watcher found element missed by finder', 'div.comment2-inner', 'THIRD'],
+    [
+      'PageParserTree(comment) watcher found element missed by finder',
+      'div.comment2-inner',
+      'SECOND'
+    ],
+    [
+      'PageParserTree(comment) watcher found element missed by finder',
+      'div.comment2-inner',
+      'THIRD'
+    ]
   ];
-  expect(logError.mock.calls.map(logErrorSummary)).toEqual(expectedErrorsSummary);
+  expect(logError.mock.calls.map(logErrorSummary)).toEqual(
+    expectedErrorsSummary
+  );
   page.dump();
 });
 
@@ -552,39 +606,42 @@ test('replaceOptions', () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        '.comment'
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: ['.comment']
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo',
-      'FIRST'
-    ]);
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['foo bar', 'bar foo', 'FIRST']
+  );
 
-  const topLevelComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getOwnedByTag('comment');
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  const topLevelComments: LiveSet<
+    TagTreeNode<HTMLElement>
+  > = page.tree.getOwnedByTag('comment');
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
   const allCommentsNext = jest.fn();
   const topLevelCommentsNext = jest.fn();
@@ -594,34 +651,35 @@ test('replaceOptions', () => {
   page.replaceOptions({
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        {$or: [
-          [
-            '.comment'
-          ], [
-            '.comment2',
-            '.comment2-inner'
-          ]
-        ]}
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          {
+            $or: [['.comment'], ['.comment2', '.comment2-inner']]
+          }
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'bar foo',
       'FIRST',
@@ -629,35 +687,58 @@ test('replaceOptions', () => {
       'THIRD',
       'reply to second',
       'reply to you'
-    ]);
+    ]
+  );
 
-  expect(Array.from(topLevelComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo'
-    ]);
+  expect(
+    Array.from(topLevelComments.values()).map(getCommentNodeTextValue)
+  ).toEqual(['foo bar', 'bar foo']);
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
-  expect(allCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
-    [type, getCommentNodeTextValue(value)]
-  ))).toEqual([]);
-  expect(topLevelCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
-    [type, getCommentNodeTextValue(value)]
-  ))).toEqual([]);
+  expect(
+    allCommentsNext.mock.calls.map(([changes]) =>
+      changes.map(({ type, value }) => [type, getCommentNodeTextValue(value)])
+    )
+  ).toEqual([]);
+  expect(
+    topLevelCommentsNext.mock.calls.map(([changes]) =>
+      changes.map(({ type, value }) => [type, getCommentNodeTextValue(value)])
+    )
+  ).toEqual([]);
 
   allCommentsSub.pullChanges();
   topLevelCommentsSub.pullChanges();
 
-  expect(allCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
-    [type, getCommentNodeTextValue(value)]
-  ))).toEqual([
-    [['remove', 'FIRST'], ['remove', 'foo bar'], ['remove', 'bar foo'], ['add', 'foo bar'], ['add', 'bar foo'], ['add', 'FIRST'], ['add', 'SECOND'], ['add', 'THIRD'], ['add', 'reply to second'], ['add', 'reply to you']]
+  expect(
+    allCommentsNext.mock.calls.map(([changes]) =>
+      changes.map(({ type, value }) => [type, getCommentNodeTextValue(value)])
+    )
+  ).toEqual([
+    [
+      ['remove', 'FIRST'],
+      ['remove', 'foo bar'],
+      ['remove', 'bar foo'],
+      ['add', 'foo bar'],
+      ['add', 'bar foo'],
+      ['add', 'FIRST'],
+      ['add', 'SECOND'],
+      ['add', 'THIRD'],
+      ['add', 'reply to second'],
+      ['add', 'reply to you']
+    ]
   ]);
-  expect(topLevelCommentsNext.mock.calls.map(([changes]) => changes.map(({type, value}) =>
-    [type, getCommentNodeTextValue(value)]
-  ))).toEqual([
-    [['remove', 'foo bar'], ['remove', 'bar foo'], ['add', 'foo bar'], ['add', 'bar foo']]
+  expect(
+    topLevelCommentsNext.mock.calls.map(([changes]) =>
+      changes.map(({ type, value }) => [type, getCommentNodeTextValue(value)])
+    )
+  ).toEqual([
+    [
+      ['remove', 'foo bar'],
+      ['remove', 'bar foo'],
+      ['add', 'foo bar'],
+      ['add', 'bar foo']
+    ]
   ]);
 
   page.dump();
@@ -670,40 +751,52 @@ test('$watch', async () => {
     },
     tags: {},
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        {$watch: {attributeFilter: ['data-test'], cond: '[data-test="foo"]'}},
-        '.article-comments'
-      ]}
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: [
+          'body',
+          '.page-outer',
+          {
+            $watch: {
+              attributeFilter: ['data-test'],
+              cond: '[data-test="foo"]'
+            }
+          },
+          '.article-comments'
+        ]
+      }
     ],
     finders: {}
   });
 
   const commentSections = page.tree.getOwnedByTag('commentSection');
-  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
-  ]);
+  expect(
+    Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))
+  ).toEqual([]);
 
   const outer = qs(document, '.page-outer');
   outer.setAttribute('data-test', 'foo');
-  emitMutation(outer, {attributeName: 'data-test'});
+  emitMutation(outer, { attributeName: 'data-test' });
 
-  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
-  ]);
+  expect(
+    Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))
+  ).toEqual([]);
 
   await delay(0);
 
-  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
-    'div.article-comments'
-  ]);
+  expect(
+    Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))
+  ).toEqual(['div.article-comments']);
 
   outer.setAttribute('data-test', 'foobar');
-  emitMutation(outer, {attributeName: 'data-test'});
+  emitMutation(outer, { attributeName: 'data-test' });
 
   await delay(0);
 
-  expect(Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))).toEqual([
-  ]);
+  expect(
+    Array.from(commentSections.values()).map(x => tagAndClassName(x.getValue()))
+  ).toEqual([]);
 
   page.dump();
 });
@@ -713,37 +806,40 @@ test('adding and remove element with children does not break', async () => {
   const page = new PageParserTree(document, {
     logError,
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        {$or: [
-          [
-            '.comment2',
-            '.comment2-inner'
-          ], [
-            '.comment'
-          ]
-        ]}
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          {
+            $or: [['.comment2', '.comment2-inner'], ['.comment']]
+          }
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
-  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag('comment');
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
+  const allComments: LiveSet<TagTreeNode<HTMLElement>> = page.tree.getAllByTag(
+    'comment'
+  );
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    [
       'foo bar',
       'bar foo',
       'FIRST',
@@ -751,11 +847,14 @@ test('adding and remove element with children does not break', async () => {
       'THIRD',
       'reply to second',
       'reply to you'
-    ]);
-  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+    ]
+  );
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(
+    page.tree.getAllByTag('comment').values().size
+  );
 
-  const thirdComment = Array.from(allComments.values()).filter(node =>
-    getCommentNodeTextValue(node) === 'THIRD'
+  const thirdComment = Array.from(allComments.values()).filter(
+    node => getCommentNodeTextValue(node) === 'THIRD'
   )[0];
   const thirdCommentEl = thirdComment.getValue();
 
@@ -768,16 +867,12 @@ test('adding and remove element with children does not break', async () => {
 
   await delay(0);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo',
-      'FIRST',
-      'SECOND',
-      'reply to second',
-      'reply to you'
-    ]);
-  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['foo bar', 'bar foo', 'FIRST', 'SECOND', 'reply to second', 'reply to you']
+  );
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(
+    page.tree.getAllByTag('comment').values().size
+  );
 
   // Re-add the element, but then synchronously remove its parent afterward.
   thirdCommentParentEl.appendChild(thirdCommentEl);
@@ -791,16 +886,12 @@ test('adding and remove element with children does not break', async () => {
 
   await delay(0);
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-      'foo bar',
-      'bar foo',
-      'FIRST',
-      'SECOND',
-      'reply to second',
-      'reply to you',
-    ]);
-  expect(page.tree.getAllByTag('replySection').values().size).toBe(page.tree.getAllByTag('comment').values().size);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    ['foo bar', 'bar foo', 'FIRST', 'SECOND', 'reply to second', 'reply to you']
+  );
+  expect(page.tree.getAllByTag('replySection').values().size).toBe(
+    page.tree.getAllByTag('comment').values().size
+  );
 
   expect(logError.mock.calls.map(logErrorSummary)).toEqual([]);
 
@@ -808,9 +899,9 @@ test('adding and remove element with children does not break', async () => {
 
   page.dump();
 
-  expect(Array.from(allComments.values()).map(getCommentNodeTextValue))
-    .toEqual([
-    ]);
+  expect(Array.from(allComments.values()).map(getCommentNodeTextValue)).toEqual(
+    []
+  );
 
   expect(allComments.isEnded()).toBe(true);
 });
@@ -818,62 +909,76 @@ test('adding and remove element with children does not break', async () => {
 test('replaceOptions throws if tags change', () => {
   const page = new PageParserTree(document, {
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        '.comment'
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: ['.comment']
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
 
-  expect(() => page.replaceOptions({
-    tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: []}
-    },
-    watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        '.comment'
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
-    ],
-    finders: {}
-  })).toThrowError('replaceOptions does not support tag changes');
+  expect(() =>
+    page.replaceOptions({
+      tags: {
+        comment: { ownedBy: ['comment'] },
+        replySection: { ownedBy: [] }
+      },
+      watchers: [
+        {
+          sources: [null],
+          tag: 'commentSection',
+          selectors: ['body', '.page-outer', '.article-comments']
+        },
+        {
+          sources: ['commentSection', 'replySection'],
+          tag: 'comment',
+          selectors: ['.comment']
+        },
+        {
+          sources: ['comment'],
+          tag: 'replySection',
+          selectors: ['.replies']
+        }
+      ],
+      finders: {}
+    })
+  ).toThrowError('replaceOptions does not support tag changes');
 
   page.dump();
 });
 
 describe('validation', () => {
   test('ownedBy non-existent tag', () => {
-    expect(() => new PageParserTree(document, {
-      tags: {
-        foo: {ownedBy: ['bar']}
-      },
-      watchers: [
-        {sources: [null], tag: 'foo', selectors: [
-          'body',
-          'a'
-        ]}
-      ],
-      finders: {}
-    })).toThrowError();
+    expect(
+      () =>
+        new PageParserTree(document, {
+          tags: {
+            foo: { ownedBy: ['bar'] }
+          },
+          watchers: [
+            {
+              sources: [null],
+              tag: 'foo',
+              selectors: ['body', 'a']
+            }
+          ],
+          finders: {}
+        })
+    ).toThrowError();
   });
 });

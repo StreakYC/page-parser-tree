@@ -2,9 +2,13 @@
 
 import LiveSet from 'live-set';
 
-import type {ElementContext} from '../internalTypes';
+import type { ElementContext } from '../internalTypes';
 
-export default function watchMutations(input: LiveSet<ElementContext>, attributeFilter: string[], condFn: (el: HTMLElement) => boolean): LiveSet<ElementContext> {
+export default function watchMutations(
+  input: LiveSet<ElementContext>,
+  attributeFilter: string[],
+  condFn: (el: HTMLElement) => boolean
+): LiveSet<ElementContext> {
   return new LiveSet({
     scheduler: input.getScheduler(),
     read() {
@@ -13,7 +17,10 @@ export default function watchMutations(input: LiveSet<ElementContext>, attribute
     listen(setValues, controller) {
       setValues(new Set());
 
-      const entries: Map<ElementContext, {mo: MutationObserver, passed: boolean}> = new Map();
+      const entries: Map<
+        ElementContext,
+        { mo: MutationObserver, passed: boolean }
+      > = new Map();
 
       function newEc(ec: ElementContext) {
         const mo = new MutationObserver(changes => {
@@ -31,18 +38,19 @@ export default function watchMutations(input: LiveSet<ElementContext>, attribute
           }
         });
 
-        const entry = {mo, passed: false};
+        const entry = { mo, passed: false };
         if (condFn(ec.el)) {
           entry.passed = true;
           controller.add(ec);
         }
-        mo.observe(ec.el, {attributes: true, attributeFilter});
+        mo.observe(ec.el, { attributes: true, attributeFilter });
         entries.set(ec, entry);
       }
 
       function removedEc(ec: ElementContext) {
         const entry = entries.get(ec);
-        if (!entry) throw new Error('Should not happen: Unseen ElementContext removed');
+        if (!entry)
+          throw new Error('Should not happen: Unseen ElementContext removed');
         entry.mo.disconnect();
         if (entry.passed) {
           controller.remove(ec);
@@ -68,7 +76,7 @@ export default function watchMutations(input: LiveSet<ElementContext>, attribute
       return {
         unsubscribe() {
           sub.unsubscribe();
-          entries.forEach(({mo}) => {
+          entries.forEach(({ mo }) => {
             mo.disconnect();
           });
         },

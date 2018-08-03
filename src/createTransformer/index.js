@@ -12,10 +12,13 @@ import createCssFn from './createCssFn';
 import watchMutations from './watchMutations';
 import watchFilteredChildren from './watchFilteredChildren';
 
-import type {Selector} from '..';
-import type {ElementContext} from '../internalTypes';
+import type { Selector } from '..';
+import type { ElementContext } from '../internalTypes';
 
-export default function createTransformer(scheduler: Scheduler, selectors: Array<Selector>): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
+export default function createTransformer(
+  scheduler: Scheduler,
+  selectors: Array<Selector>
+): (liveSet: LiveSet<ElementContext>) => LiveSet<ElementContext> {
   const transformers = selectors.map(item => {
     if (typeof item === 'string') {
       const condFn = createCssFn(item);
@@ -23,28 +26,26 @@ export default function createTransformer(scheduler: Scheduler, selectors: Array
     } else if (item.$or) {
       const transformers = item.$or.map(s => createTransformer(scheduler, s));
       return liveSet =>
-        liveSetMerge(transformers.map(transformer =>
-          transformer(liveSet)
-        ));
+        liveSetMerge(transformers.map(transformer => transformer(liveSet)));
     } else if (item.$watch) {
-      const {attributeFilter, cond} = item.$watch;
+      const { attributeFilter, cond } = item.$watch;
       const condFn = typeof cond === 'function' ? cond : createCssFn(cond);
       return liveSet => watchMutations(liveSet, attributeFilter, condFn);
     } else if (item.$log) {
-      const {$log} = item;
+      const { $log } = item;
       const filterFn = value => {
         console.log($log, value.el); //eslint-disable-line no-console
         return true;
       };
       return liveSet => liveSetFilter(liveSet, filterFn);
     } else if (item.$filter) {
-      const {$filter} = item;
-      const filterFn = ({el}) => $filter(el);
+      const { $filter } = item;
+      const filterFn = ({ el }) => $filter(el);
       return liveSet => liveSetFilter(liveSet, filterFn);
     } else if (item.$map) {
-      const {$map} = item;
+      const { $map } = item;
       const transducer = t.compose(
-        t.map(ec => ({el: $map(ec.el), parents: ec.parents})),
+        t.map(ec => ({ el: $map(ec.el), parents: ec.parents })),
         t.filter(ec => ec.el != null)
       );
       return liveSet => liveSetTransduce(liveSet, transducer);
@@ -52,7 +53,10 @@ export default function createTransformer(scheduler: Scheduler, selectors: Array
     throw new Error(`Invalid selector item: ${JSON.stringify(item)}`);
   });
 
-  return transformers.reduce((combined, transformer) => {
-    return liveSet => transformer(combined(liveSet));
-  }, x => x);
+  return transformers.reduce(
+    (combined, transformer) => {
+      return liveSet => transformer(combined(liveSet));
+    },
+    x => x
+  );
 }

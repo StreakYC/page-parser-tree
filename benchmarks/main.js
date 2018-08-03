@@ -2,17 +2,17 @@
 /* @flow */
 /* eslint-disable no-console */
 
-const {JSDOM} = require('jsdom');
+const { JSDOM } = require('jsdom');
 const document = new JSDOM('').window.document;
 global.__proto__ = document.defaultView;
 
 import emitMutation from '../testlib/MockMutationObserver';
 import assert from 'assert';
 import delay from 'pdelay';
-import type {default as _PageParserTree} from '../src';
+import type { default as _PageParserTree } from '../src';
 const PageParserTree: Class<_PageParserTree> = (require('../src'): any);
 
-function qs(el: HTMLElement|Document, selector: string): HTMLElement {
+function qs(el: HTMLElement | Document, selector: string): HTMLElement {
   const result = el.querySelector(selector);
   if (!result) throw new Error(`Selector failed to find element: ${selector}`);
   return result;
@@ -45,7 +45,7 @@ async function main() {
   const firstCommentReplies = qs(document, '.comment > .replies');
   const repliesToStartWith = 3000;
 
-  for (let i=0; i<repliesToStartWith; i++) {
+  for (let i = 0; i < repliesToStartWith; i++) {
     const reply = document.createElement('div');
     reply.className = 'comment';
     reply.innerHTML = `<div class="body">reply ${i}</div><div class="replies"></div>`;
@@ -60,36 +60,36 @@ async function main() {
       throw err;
     },
     tags: {
-      'comment': {ownedBy: ['comment']},
-      'replySection': {ownedBy: ['comment']}
+      comment: { ownedBy: ['comment'] },
+      replySection: { ownedBy: ['comment'] }
     },
     watchers: [
-      {sources: [null], tag: 'commentSection', selectors: [
-        'body',
-        'div',
-        '.page-outer',
-        '.article-comments'
-      ]},
-      {sources: ['commentSection', 'replySection'], tag: 'comment', selectors: [
-        {$or: [
-          [
-            '.comment2',
-            '.comment2-inner'
-          ], [
-            '.comment'
-          ]
-        ]}
-      ]},
-      {sources: ['comment'], tag: 'replySection', selectors: [
-        '.replies'
-      ]},
+      {
+        sources: [null],
+        tag: 'commentSection',
+        selectors: ['body', 'div', '.page-outer', '.article-comments']
+      },
+      {
+        sources: ['commentSection', 'replySection'],
+        tag: 'comment',
+        selectors: [
+          {
+            $or: [['.comment2', '.comment2-inner'], ['.comment']]
+          }
+        ]
+      },
+      {
+        sources: ['comment'],
+        tag: 'replySection',
+        selectors: ['.replies']
+      }
     ],
     finders: {}
   });
   console.timeEnd('page-parser-tree init');
 
   const comments = page.tree.getAllByTag('comment');
-  assert.strictEqual(comments.values().size, repliesToStartWith+1);
+  assert.strictEqual(comments.values().size, repliesToStartWith + 1);
 
   const articleComments = qs(document, '.article-comments');
   const articleCommentsParent = articleComments.parentElement;
@@ -104,7 +104,7 @@ async function main() {
 
   console.time('adding replies');
   await delay(0);
-  assert.strictEqual(comments.values().size, 2*(repliesToStartWith+1));
+  assert.strictEqual(comments.values().size, 2 * (repliesToStartWith + 1));
   console.timeEnd('adding replies');
 }
 

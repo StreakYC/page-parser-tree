@@ -13,7 +13,12 @@ function ev(el: Element): EventEmitter {
 }
 
 export default function emitMutation(el: Element, mutation: Object) {
-  ev(el).emit('mutate', {target: el, addedNodes: [], removedNodes: [], ...mutation});
+  ev(el).emit('mutate', {
+    target: el,
+    addedNodes: [],
+    removedNodes: [],
+    ...mutation
+  });
 }
 
 class MockMutationObserver {
@@ -45,7 +50,9 @@ class MockMutationObserver {
   }
   disconnect() {
     this._cb = () => {};
-    this._elements.forEach(el => ev(el).removeListener('mutate', this._listener));
+    this._elements.forEach(el =>
+      ev(el).removeListener('mutate', this._listener)
+    );
   }
 }
 

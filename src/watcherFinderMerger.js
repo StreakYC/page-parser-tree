@@ -2,12 +2,20 @@
 
 import LiveSet from 'live-set';
 import type Scheduler from 'live-set/Scheduler';
-import type {TagTree} from 'tag-tree';
-import type {TagOptions, Finder} from '.';
+import type { TagTree } from 'tag-tree';
+import type { TagOptions, Finder } from '.';
 
-import type {ElementContext} from './internalTypes';
+import type { ElementContext } from './internalTypes';
 
-export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTree<HTMLElement>, tag: string, tagOptions: TagOptions, watcherSet: ?LiveSet<ElementContext>, finder: ?Finder, logError: (err: Error, el: ?HTMLElement) => void): LiveSet<ElementContext> {
+export default function watcherFinderMerger(
+  scheduler: Scheduler,
+  tagTree: TagTree<HTMLElement>,
+  tag: string,
+  tagOptions: TagOptions,
+  watcherSet: ?LiveSet<ElementContext>,
+  finder: ?Finder,
+  logError: (err: Error, el: ?HTMLElement) => void
+): LiveSet<ElementContext> {
   return new LiveSet({
     scheduler,
     read() {
@@ -35,17 +43,22 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
           next(changes) {
             changes.forEach(change => {
               if (change.type === 'add') {
-                const {el} = change.value;
+                const { el } = change.value;
                 watcherFoundElements.add(el);
                 if (currentElements.has(el)) {
-                  logError(new Error(`PageParserTree(${tag}) watcher found element already found by finder`), el);
+                  logError(
+                    new Error(
+                      `PageParserTree(${tag}) watcher found element already found by finder`
+                    ),
+                    el
+                  );
                 } else {
                   currentElements.add(el);
                   currentElementContexts.add(change.value);
                   controller.add(change.value);
                 }
               } else if (change.type === 'remove') {
-                const {el} = change.value;
+                const { el } = change.value;
                 watcherFoundElements.delete(el);
                 watcherFoundElementsMissedByFinder.delete(el);
                 if (currentElementContexts.has(change.value)) {
@@ -70,13 +83,13 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
       let timeoutHandle, idleHandle;
       if (finder) {
         const finderStartedTimestamp = Date.now();
-        const {fn, interval} = finder;
+        const { fn, interval } = finder;
         const ownedBy = tagOptions.ownedBy || [];
 
         const runFinder = () => {
           const finderRunFoundElements = new Set();
           const found = fn(tagTree.getValue());
-          for (let i=0, len=found.length; i<len; i++) {
+          for (let i = 0, len = found.length; i < len; i++) {
             const el = found[i];
             finderRunFoundElements.add(el);
             if (!currentElements.has(el)) {
@@ -85,19 +98,29 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
               currentElementContexts.add(ec);
               controller.add(ec);
               if (watcherSet) {
-                logError(new Error(`PageParserTree(${tag}) finder found element missed by watcher`), el);
+                logError(
+                  new Error(
+                    `PageParserTree(${tag}) finder found element missed by watcher`
+                  ),
+                  el
+                );
                 if (sub) sub.pullChanges();
               }
             }
           }
 
           currentElementContexts.forEach(ec => {
-            const {el} = ec;
+            const { el } = ec;
             if (!finderRunFoundElements.has(el)) {
               if (watcherFoundElements.has(el)) {
                 if (!watcherFoundElementsMissedByFinder.has(el)) {
                   watcherFoundElementsMissedByFinder.add(el);
-                  logError(new Error(`PageParserTree(${tag}) watcher found element missed by finder`), el);
+                  logError(
+                    new Error(
+                      `PageParserTree(${tag}) watcher found element missed by finder`
+                    ),
+                    el
+                  );
                 }
               } else {
                 currentElementContexts.delete(ec);
@@ -115,11 +138,14 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
         const scheduleFinder = () => {
           let time;
           if (interval == null) {
-            time = 5000+Math.random()*1000;
+            time = 5000 + Math.random() * 1000;
           } else if (typeof interval === 'number') {
             time = interval;
           } else if (typeof interval === 'function') {
-            time = interval(currentElements.size, Date.now()-finderStartedTimestamp);
+            time = interval(
+              currentElements.size,
+              Date.now() - finderStartedTimestamp
+            );
           } else {
             throw new Error(`interval has wrong type: ${typeof interval}`);
           }
@@ -127,7 +153,9 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
           timeoutHandle = setTimeout(() => {
             if (global.requestIdleCallback && global.cancelIdleCallback) {
               // Wait up to `time` milliseconds again until there's an idle moment.
-              idleHandle = global.requestIdleCallback(runFinder, {timeout: time});
+              idleHandle = global.requestIdleCallback(runFinder, {
+                timeout: time
+              });
             } else {
               runFinder();
             }
@@ -151,7 +179,11 @@ export default function watcherFinderMerger(scheduler: Scheduler, tagTree: TagTr
   });
 }
 
-function makeElementContext(el: HTMLElement, tagTree: TagTree<HTMLElement>, ownedBy: string[]): ElementContext {
+function makeElementContext(
+  el: HTMLElement,
+  tagTree: TagTree<HTMLElement>,
+  ownedBy: string[]
+): ElementContext {
   // Don't compute parents until it's read from.
   // This is important because nodes aren't added to the tag tree until
   // PageParserTree iterates over the results, and some of these nodes may be
@@ -167,12 +199,12 @@ function makeElementContext(el: HTMLElement, tagTree: TagTree<HTMLElement>, owne
 
         let current = el.parentElement;
         while (current) {
-          const tagTreeNodes = tagTree.getNodesForValue((current:any));
-          for (let i=0,len=tagTreeNodes.length; i<len; i++) {
+          const tagTreeNodes = tagTree.getNodesForValue((current: any));
+          for (let i = 0, len = tagTreeNodes.length; i < len; i++) {
             const node = tagTreeNodes[i];
             const tag = node.getTag();
             if (tag == null || ownedBy.indexOf(tag) >= 0) {
-              parents.push({tag, node});
+              parents.push({ tag, node });
               break;
             }
           }

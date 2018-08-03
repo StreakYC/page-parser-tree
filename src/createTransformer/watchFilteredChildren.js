@@ -2,9 +2,12 @@
 
 import LiveSet from 'live-set';
 
-import type {ElementContext} from '../internalTypes';
+import type { ElementContext } from '../internalTypes';
 
-export default function watchFilteredChildren(input: LiveSet<ElementContext>, condFn: (el: HTMLElement) => boolean): LiveSet<ElementContext> {
+export default function watchFilteredChildren(
+  input: LiveSet<ElementContext>,
+  condFn: (el: HTMLElement) => boolean
+): LiveSet<ElementContext> {
   return new LiveSet({
     scheduler: input.getScheduler(),
     read() {
@@ -13,7 +16,10 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
     listen(setValues, controller) {
       setValues(new Set());
 
-      const inputEntries: Map<ElementContext, {observer: MutationObserver, removedNode: *}> = new Map();
+      const inputEntries: Map<
+        ElementContext,
+        { observer: MutationObserver, removedNode: * }
+      > = new Map();
       const outputEcs: Map<HTMLElement, ElementContext> = new Map();
 
       function newEc(ec: ElementContext) {
@@ -21,7 +27,7 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
           if (child.nodeType !== 1) return;
           /*:: if (!(child instanceof HTMLElement)) throw new Error() */
           if (condFn(child)) {
-            const childEc = {el: child, parents: ec.parents};
+            const childEc = { el: child, parents: ec.parents };
             outputEcs.set(child, childEc);
             controller.add(childEc);
           }
@@ -41,13 +47,13 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
             // If any removals are followed by a re-add, then drop the pair.
             const removedEls = new Set();
             const addedEls = [];
-            mutations.forEach(({addedNodes, removedNodes}) => {
-              for (let i=0,len=removedNodes.length; i<len; i++) {
+            mutations.forEach(({ addedNodes, removedNodes }) => {
+              for (let i = 0, len = removedNodes.length; i < len; i++) {
                 const el = removedNodes[i];
                 if (el.nodeType !== 1) continue;
                 removedEls.add(removedNodes[i]);
               }
-              for (let i=0,len=addedNodes.length; i<len; i++) {
+              for (let i = 0, len = addedNodes.length; i < len; i++) {
                 const el = addedNodes[i];
                 if (el.nodeType !== 1) continue;
                 if (removedEls.has(el)) {
@@ -70,16 +76,20 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
         Array.prototype.forEach.call(ec.el.children, addedNode);
 
         const observer = new MutationObserver(changesHandler);
-        observer.observe(ec.el, {childList: true});
+        observer.observe(ec.el, { childList: true });
 
-        inputEntries.set(ec, {observer, removedNode});
+        inputEntries.set(ec, { observer, removedNode });
       }
 
       function removedEc(ec: ElementContext) {
         const entry = inputEntries.get(ec);
-        if (!entry) throw new Error('Should not happen: Unseen ElementContext removed');
+        if (!entry)
+          throw new Error('Should not happen: Unseen ElementContext removed');
         entry.observer.takeRecords().forEach(mutation => {
-          Array.prototype.forEach.call(mutation.removedNodes, entry.removedNode);
+          Array.prototype.forEach.call(
+            mutation.removedNodes,
+            entry.removedNode
+          );
         });
         entry.observer.disconnect();
         Array.prototype.forEach.call(ec.el.children, entry.removedNode);
@@ -104,7 +114,7 @@ export default function watchFilteredChildren(input: LiveSet<ElementContext>, co
       return {
         unsubscribe() {
           sub.unsubscribe();
-          inputEntries.forEach(({observer}) => {
+          inputEntries.forEach(({ observer }) => {
             observer.disconnect();
           });
         },

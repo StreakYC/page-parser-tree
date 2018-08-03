@@ -1,13 +1,13 @@
 /* @flow */
 
-import type {TagTreeNode} from 'tag-tree';
+import type { TagTreeNode } from 'tag-tree';
 
 export type NodeTagPair = {|
-  tag: ?string;
-  node: TagTreeNode<HTMLElement>;
+  tag: ?string,
+  node: TagTreeNode<HTMLElement>
 |};
 
 export type ElementContext = {|
-  el: HTMLElement;
-  parents: Array<NodeTagPair>;
+  el: HTMLElement,
+  parents: Array<NodeTagPair>
 |};
