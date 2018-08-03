@@ -80,9 +80,9 @@ export default function watcherFinderMerger(
         setValues(new Set());
       }
 
-      let timeoutHandle, idleHandle;
+      let finderSchedule = null;
+
       if (finder) {
-        const finderStartedTimestamp = Date.now();
         const { fn, interval } = finder;
         const ownedBy = tagOptions.ownedBy || [];
 
@@ -132,43 +132,18 @@ export default function watcherFinderMerger(
           });
 
           scheduler.flush();
-          scheduleFinder();
         };
 
-        const scheduleFinder = () => {
-          let time;
-          if (interval == null) {
-            time = 5000 + Math.random() * 1000;
-          } else if (typeof interval === 'number') {
-            time = interval;
-          } else if (typeof interval === 'function') {
-            time = interval(
-              currentElements.size,
-              Date.now() - finderStartedTimestamp
-            );
-          } else {
-            throw new Error(`interval has wrong type: ${typeof interval}`);
-          }
-
-          timeoutHandle = setTimeout(() => {
-            if (global.requestIdleCallback && global.cancelIdleCallback) {
-              // Wait up to `time` milliseconds again until there's an idle moment.
-              idleHandle = global.requestIdleCallback(runFinder, {
-                timeout: time
-              });
-            } else {
-              runFinder();
-            }
-          }, time);
-        };
-
-        scheduleFinder();
+        finderSchedule = scheduleRepeatingFinder(
+          interval,
+          currentElements,
+          runFinder
+        );
       }
 
       return {
         unsubscribe() {
-          if (timeoutHandle != null) clearTimeout(timeoutHandle);
-          if (idleHandle != null) global.cancelIdleCallback(idleHandle);
+          if (finderSchedule != null) finderSchedule.dispose();
           if (sub) sub.unsubscribe();
         },
         pullChanges() {
@@ -177,6 +152,58 @@ export default function watcherFinderMerger(
       };
     }
   });
+}
+
+function scheduleRepeatingFinder(
+  interval: $PropertyType<Finder, 'interval'>,
+  currentElements: Set<any>,
+  runFinder: () => void
+): { dispose: () => void } {
+  const finderStartedTimestamp = Date.now();
+
+  let timeoutHandle = null;
+  let idleHandle = null;
+
+  const step = () => {
+    runFinder();
+    scheduleNextStep();
+  };
+
+  const scheduleNextStep = () => {
+    let time;
+    if (interval == null) {
+      time = 5000 + Math.random() * 1000;
+    } else if (typeof interval === 'number') {
+      time = interval;
+    } else if (typeof interval === 'function') {
+      time = interval(
+        currentElements.size,
+        Date.now() - finderStartedTimestamp
+      );
+    } else {
+      throw new Error(`interval has wrong type: ${typeof interval}`);
+    }
+
+    timeoutHandle = setTimeout(() => {
+      if (global.requestIdleCallback && global.cancelIdleCallback) {
+        // Wait up to `time` milliseconds again until there's an idle moment.
+        idleHandle = global.requestIdleCallback(step, {
+          timeout: time
+        });
+      } else {
+        step();
+      }
+    }, time);
+  };
+
+  scheduleNextStep();
+
+  return {
+    dispose() {
+      if (timeoutHandle != null) clearTimeout(timeoutHandle);
+      if (idleHandle != null) global.cancelIdleCallback(idleHandle);
+    }
+  };
 }
 
 function makeElementContext(
