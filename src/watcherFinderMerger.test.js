@@ -104,7 +104,7 @@ const watcherValues = [
   { el: commentB, parents: [{ tag: null, node: tagTree }] }
 ];
 
-test('listen with watcher', async () => {
+test('watcher only', async () => {
   const { liveSet: input, controller } = LiveSet.active(
     new Set(watcherValues.slice(0, 1))
   );
@@ -151,7 +151,7 @@ test('listen with watcher', async () => {
   expect(complete).toHaveBeenCalledTimes(1);
 });
 
-test('listen with finder', async () => {
+test('finder only', async () => {
   const finder = {
     interval: 20,
     fn(root) {
@@ -240,7 +240,7 @@ test('listen with finder', async () => {
   expect(logError).toHaveBeenCalledTimes(0);
 });
 
-test('listen with consistent watcher and finder', async () => {
+test('consistent watcher and finder', async () => {
   const { liveSet: input, controller } = LiveSet.active(
     new Set(watcherValues.slice(0, 1))
   );
@@ -287,7 +287,7 @@ test('listen with consistent watcher and finder', async () => {
   expect(logError).toHaveBeenCalledTimes(0);
 });
 
-test('listen with bad watcher and good finder', async () => {
+test('bad watcher and good finder', async () => {
   const { liveSet: input, controller } = LiveSet.active(
     new Set(watcherValues.slice(0, 1))
   );
@@ -414,7 +414,7 @@ test('listen with bad watcher and good finder', async () => {
   ]);
 });
 
-test('listen with good watcher and bad finder', async () => {
+test('good watcher and bad finder', async () => {
   const { liveSet: input, controller } = LiveSet.active(
     new Set(watcherValues.slice(0, 1))
   );
@@ -468,7 +468,7 @@ test('listen with good watcher and bad finder', async () => {
   ]);
 });
 
-test('listen watcher finds element after finder', async () => {
+test('watcher finds element after finder', async () => {
   const { liveSet: input, controller } = LiveSet.active(
     new Set(watcherValues.slice(0, 1))
   );
