@@ -165,6 +165,7 @@ function scheduleRepeatingFinder(
   let idleHandle = null;
 
   const step = () => {
+    idleHandle = null;
     runFinder();
     scheduleNextStep();
   };
@@ -185,6 +186,7 @@ function scheduleRepeatingFinder(
     }
 
     timeoutHandle = setTimeout(() => {
+      timeoutHandle = null;
       if (global.requestIdleCallback && global.cancelIdleCallback) {
         // Wait up to `time` milliseconds again until there's an idle moment.
         idleHandle = global.requestIdleCallback(step, {
