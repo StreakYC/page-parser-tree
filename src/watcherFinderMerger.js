@@ -158,7 +158,7 @@ function scheduleRepeatingFinder(
   interval: $PropertyType<Finder, 'interval'>,
   currentElements: Set<any>,
   runFinder: () => void
-): { dispose: () => void } {
+): { dispose(): void } {
   const finderStartedTimestamp = Date.now();
 
   let timeoutHandle = null;
