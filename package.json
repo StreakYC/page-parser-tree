@@ -3,6 +3,7 @@
   "version": "0.3.5",
   "description": "Library to find elements in a dynamic web page",
   "main": "js/index.js",
+  "sideEffects": false,
   "scripts": {
     "prepare": "rimraf js && babel -s inline -d js/ src/ --ignore '**/*.test.*' && flow-copy-source -v src js --ignore '**/*.test.*'",
     "test": "yarn run lint && yarn run flow_check && jest",
