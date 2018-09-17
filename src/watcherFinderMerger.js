@@ -185,6 +185,13 @@ function scheduleRepeatingFinder(
       throw new Error(`interval has wrong type: ${typeof interval}`);
     }
 
+    // Assert to Flow that all paths should have set time to a number.
+    (time: number);
+
+    if (time === Infinity) {
+      return;
+    }
+
     timeoutHandle = setTimeout(() => {
       timeoutHandle = null;
       if (global.requestIdleCallback && global.cancelIdleCallback) {

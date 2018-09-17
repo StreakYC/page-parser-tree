@@ -248,8 +248,9 @@ depending on page and user activity.
 Alternative, `interval` may be a function that returns a number. The function
 will be passed the number of elements that have currently been found on the
 page, and the amount of time that has passed since the finder started running.
-If there are a limited number of elements expected to be found, then his allows
-the finder to throttle back after they're found.
+If there are a limited number of elements expected to be found, then this
+allows the finder to throttle back after they're found. If the value Infinity
+is returned, then the finder will not be run again.
 
 #### PageParserTreeOptions::watchers
 `PageParserTreeOptions::watchers: Array<Watcher>`
