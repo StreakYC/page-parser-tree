@@ -5,6 +5,7 @@ npm-debug.log
 /coverage
 /benchmarks
 /.eslint*
+/.circleci
 .babelrc
 /src
 /flow-typed
