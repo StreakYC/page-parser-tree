@@ -173,7 +173,11 @@ test('finder only', async () => {
   );
 
   output.subscribe({ next, complete });
-  expect(Array.from(output.values()).map(serializeEc)).toEqual([]);
+  expect(
+    next.mock.calls.map(([changes]) =>
+      changes.map(({ type, value }) => [type, serializeEc(value)])
+    )
+  ).toEqual([]);
 
   await delay(50);
   expect(Array.from(output.values()).map(serializeEc)).toEqual(
@@ -245,10 +249,13 @@ test('consistent watcher and finder', async () => {
     new Set(watcherValues.slice(0, 1))
   );
 
+  let finderFn = root =>
+    Array.from(root.querySelectorAll('.comment')).slice(0, 1);
+
   const finder = {
     interval: 20,
     fn(root) {
-      return root.querySelectorAll('.comment');
+      return finderFn(root);
     }
   };
 
@@ -274,6 +281,7 @@ test('consistent watcher and finder', async () => {
   watcherValues.slice(1).forEach(ec => {
     controller.add(ec);
   });
+  finderFn = root => root.querySelectorAll('.comment');
 
   await delay(50);
   expect(Array.from(output.values()).map(serializeEc)).toEqual(
@@ -284,7 +292,9 @@ test('consistent watcher and finder', async () => {
       changes.map(({ type, value }) => [type, serializeEc(value)])
     )
   ).toEqual([watcherValues.slice(1).map(ec => ['add', serializeEc(ec)])]);
-  expect(logError).toHaveBeenCalledTimes(0);
+  expect(
+    logError.mock.calls.map(([err, el]) => [err.message, tagAndClassName(el)])
+  ).toEqual([]);
 });
 
 test('bad watcher and good finder', async () => {
@@ -292,10 +302,12 @@ test('bad watcher and good finder', async () => {
     new Set(watcherValues.slice(0, 1))
   );
 
+  let finderFn = root =>
+    Array.from(root.querySelectorAll('.comment')).slice(0, 1);
   const finder = {
     interval: 20,
     fn(root) {
-      return root.querySelectorAll('.comment');
+      return finderFn(root);
     }
   };
 
@@ -321,6 +333,7 @@ test('bad watcher and good finder', async () => {
   watcherValues.slice(2 /* skip 1 */).forEach(ec => {
     controller.add(ec);
   });
+  finderFn = root => root.querySelectorAll('.comment');
 
   await delay(50);
   const reorderedWatcherValues = watcherValues
@@ -419,10 +432,12 @@ test('good watcher and bad finder', async () => {
     new Set(watcherValues.slice(0, 1))
   );
 
+  let finderFn = root =>
+    Array.from(root.querySelectorAll('.comment')).slice(0, 1);
   const finder = {
     interval: 20,
     fn(root) {
-      return root.querySelectorAll('.comment:not(.a1)');
+      return finderFn(root);
     }
   };
 
@@ -448,6 +463,7 @@ test('good watcher and bad finder', async () => {
   watcherValues.slice(1).forEach(ec => {
     controller.add(ec);
   });
+  finderFn = root => root.querySelectorAll('.comment:not(.a1)');
 
   await delay(50);
   expect(Array.from(output.values()).map(serializeEc)).toEqual(
@@ -473,11 +489,13 @@ test('watcher finds element after finder', async () => {
     new Set(watcherValues.slice(0, 1))
   );
 
+  let finderFn = root =>
+    Array.from(root.querySelectorAll('.comment')).slice(0, 1);
   const interval = jest.fn(() => 20);
   const finder = {
     interval,
     fn(root) {
-      return root.querySelectorAll('.comment');
+      return finderFn(root);
     }
   };
 
@@ -509,6 +527,7 @@ test('watcher finds element after finder', async () => {
     watcherValues.slice(0, 1).map(serializeEc)
   );
 
+  finderFn = root => root.querySelectorAll('.comment');
   await delay(50);
 
   expect(Array.from(output.values()).map(serializeEc)).toEqual(
