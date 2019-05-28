@@ -1,7 +1,6 @@
 # page-parser-tree
 
-[![Circle CI](https://circleci.com/gh/StreakYC/page-parser-tree.svg?style=shield)](https://circleci.com/gh/StreakYC/page-parser-tree)
-[![npm version](https://badge.fury.io/js/page-parser-tree.svg)](https://badge.fury.io/js/page-parser-tree)
++[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/StreakYC/page-parser-tree/blob/master/LICENSE.txt) [![Circle CI](https://circleci.com/gh/StreakYC/page-parser-tree.svg?style=shield)](https://circleci.com/gh/StreakYC/page-parser-tree) [![npm version](https://badge.fury.io/js/page-parser-tree.svg)](https://badge.fury.io/js/page-parser-tree)
 
 This module provides a declarative and robust way to recognize elements on a
 dynamic webpage. This is useful for building browser extensions that offer rich
@@ -19,7 +18,7 @@ the page's contents through use of
 To identify elements to tag, the primary method is to specify a "Watcher",
 which uses a CSS selector-like syntax. A watcher specifies a tag name, a list
 of sources including either the root element or previously-tagged elements to
-initialize the matched set to, and an array of PageParserTree selectors used to  
+initialize the matched set to, and an array of PageParserTree selectors used to
 transform the matched set to the set of elements to tag. The PageParserTree
 selectors may take advantage of MutationObservers so that the page is watched
 for changes and new elements can be found on the page before the browser has
