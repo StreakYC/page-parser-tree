@@ -14,7 +14,7 @@ export default function watcherFinderMerger(
   tagOptions: TagOptions,
   watcherSet: ?LiveSet<ElementContext>,
   finder: ?Finder,
-  logError: (err: Error, el: ?HTMLElement) => void
+  logError: (err: Error, el: void | HTMLElement) => void
 ): LiveSet<ElementContext> {
   return new LiveSet({
     scheduler,
@@ -218,7 +218,7 @@ function scheduleRepeatingFinder(
 function makeElementContext(
   el: HTMLElement,
   tagTree: TagTree<HTMLElement>,
-  ownedBy: string[]
+  ownedBy: $ReadOnlyArray<string>
 ): ElementContext {
   // Don't compute parents until it's read from.
   // This is important because nodes aren't added to the tag tree until

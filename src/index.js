@@ -38,13 +38,13 @@ export type Finder = {|
 |};
 
 export type TagOptions = {|
-  ownedBy?: ?Array<string>
+  ownedBy?: ?$ReadOnlyArray<string>
 |};
 
 export type PageParserTreeOptions = {|
-  logError?: ?(err: Error, el: ?HTMLElement) => void,
+  logError?: ?(err: Error, el: void | HTMLElement) => void,
   tags: { [tag: string]: TagOptions },
-  watchers: Array<Watcher>,
+  watchers: $ReadOnlyArray<Watcher>,
   finders: { [tag: string]: Finder }
 |};
 
@@ -83,7 +83,7 @@ export default class PageParserTree {
     }
   >;
 
-  _logError: (err: Error, el: ?HTMLElement) => void;
+  _logError: (err: Error, el: void | HTMLElement) => void;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
   _tagsList: Array<{| tag: string, ownedBy?: ?$ReadOnlyArray<string> |}>;
