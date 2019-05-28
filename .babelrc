@@ -1,4 +1,11 @@
 {
-  "presets": ["es2015"],
-  "plugins": ["transform-class-properties", "transform-flow-strip-types", "transform-runtime", "add-module-exports"]
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-flow"
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-transform-runtime",
+    "add-module-exports"
+  ]
 }
