@@ -5,7 +5,7 @@
   "main": "js/index.js",
   "sideEffects": false,
   "scripts": {
-    "prepare": "rimraf js && babel -s inline -d js/ src/ --ignore '**/*.test.js' && flow-copy-source -v src js --ignore '**/*.test.*'",
+    "prepare": "rimraf js && babel -s true -d js/ src/ --ignore '**/*.test.js' && flow-copy-source -v src js --ignore '**/*.test.*'",
     "test": "yarn run lint && yarn run flow_check && jest",
     "flow_check": "flow check",
     "lint": "eslint . && prettier-check '**/*.js'",
