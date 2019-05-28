@@ -944,10 +944,20 @@
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
 
+"@types/transducers.js@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@types/transducers.js/-/transducers.js-0.3.0.tgz#5cd30bbadc7a4ccd6720b3121cd7dcc91e90827b"
+  integrity sha512-ZAHByx9pi7o0fLvGMGJbvtETHXINIAb37sqy2Pl4UgbAwwyJPrypKEqroPSUccHQW2uby862vYOBSzJnJI5YoA==
+
 "@types/yargs@^12.0.2", "@types/yargs@^12.0.9":
   version "12.0.12"
   resolved "https://registry.yarnpkg.com/@types/yargs/-/yargs-12.0.12.tgz#45dd1d0638e8c8f153e87d296907659296873916"
   integrity sha512-SOhuU4wNBxhhTHxYaiG5NY4HBhDIDnJF60GU+2LqHAdKKer86//e4yg69aENCtQ04n0ovz+tq2YPME5t5yp4pw==
+
+"@types/zen-observable@^0.8.0":
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/@types/zen-observable/-/zen-observable-0.8.0.tgz#8b63ab7f1aa5321248aad5ac890a485656dcea4d"
+  integrity sha512-te5lMAWii1uEJ4FwLjzdlbw3+n0FZNOvFXHxQDKeT0dilh7HOzdMzV2TrJVUzq8ep7J4Na8OUYPRLSQkJHAlrg==
 
 abab@^2.0.0:
   version "2.0.0"
@@ -1224,14 +1234,6 @@ babel-preset-jest@^24.6.0:
   dependencies:
     "@babel/plugin-syntax-object-rest-spread" "^7.0.0"
     babel-plugin-jest-hoist "^24.6.0"
-
-babel-runtime@^6.22.0:
-  version "6.26.0"
-  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.26.0.tgz#965c7058668e82b55d7bfe04ff2337bc8b5647fe"
-  integrity sha1-llxwWGaOgrVde/4E/yM3vItWR/4=
-  dependencies:
-    core-js "^2.4.0"
-    regenerator-runtime "^0.11.0"
 
 balanced-match@^1.0.0:
   version "1.0.0"
@@ -1580,7 +1582,7 @@ core-js-pure@3.1.3:
   resolved "https://registry.yarnpkg.com/core-js-pure/-/core-js-pure-3.1.3.tgz#4c90752d5b9471f641514f3728f51c1e0783d0b5"
   integrity sha512-k3JWTrcQBKqjkjI0bkfXS0lbpWPxYuHWfMMjC1VDmzU4Q58IwSbuXSo99YO/hUHlw/EB4AlfA2PVxOGkrIq6dA==
 
-core-js@^2.4.0, core-js@^2.6.5:
+core-js@^2.6.5:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/core-js/-/core-js-2.6.9.tgz#6b4b214620c834152e179323727fc19741b084f2"
   integrity sha512-HOpZf6eXmnl7la+cUdMnLvUxKNqLUzJvgIziQ0DiF3JwSImNphIqdGqzj6hIKyX04MmV0poclQ7+wjWvxQyR2A==
@@ -3393,16 +3395,18 @@ levn@^0.3.0, levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
-live-set@^0.4.0, live-set@^0.4.1:
-  version "0.4.4"
-  resolved "https://registry.yarnpkg.com/live-set/-/live-set-0.4.4.tgz#4817cf91e7970145a62763d341f853f267ece922"
-  integrity sha512-QoxSHp++3laldT9ymX8Wd5ITsjNYA1avhIDOkCpyzfXdPkhRSs4vzCJgQfFwKCHFbb8iTfiuEPXz3bxGXxLXPQ==
+live-set@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/live-set/-/live-set-1.0.0.tgz#8535fa243d59e1d673580063dea170b67b6910e3"
+  integrity sha512-zNGPekAhiHsaS7AFYwNXMzZhlWCaoBOSR/7ChaVWvZX3uj/EoPq2i+qzmvJt43GJT4EUzfsK7Zp3O+sBbQ8NEg==
   dependencies:
+    "@babel/runtime" "^7.0.0"
+    "@types/transducers.js" "^0.3.0"
+    "@types/zen-observable" "^0.8.0"
     asap "^2.0.5"
-    babel-runtime "^6.22.0"
     envify "^4.0.0"
     symbol-observable "^1.0.4"
-    zen-observable "^0.6.0"
+    zen-observable "^0.8.9"
 
 load-json-file@^4.0.0:
   version "4.0.0"
@@ -4313,11 +4317,6 @@ regenerate@^1.4.0:
   resolved "https://registry.yarnpkg.com/regenerate/-/regenerate-1.4.0.tgz#4a856ec4b56e4077c557589cae85e7a4c8869a11"
   integrity sha512-1G6jJVDWrt0rK99kBjvEtziZNCICAuvIPkSiUFIQxVP06RCVpq3dmDo2oi6ABpYaDYaTRr67BEhL8r1wgEZZKg==
 
-regenerator-runtime@^0.11.0:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.11.1.tgz#be05ad7f9bf7d22e056f9726cee5017fbf19e2e9"
-  integrity sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
-
 regenerator-runtime@^0.13.2:
   version "0.13.2"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.2.tgz#32e59c9a6fb9b1a4aff09b4930ca2d4477343447"
@@ -4896,13 +4895,13 @@ table@^5.2.3:
     slice-ansi "^2.1.0"
     string-width "^3.0.0"
 
-tag-tree@^0.4.0:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/tag-tree/-/tag-tree-0.4.1.tgz#0717a55e33022b2ba9a681c479dc8e33d021b1b6"
-  integrity sha1-BxelXjMCKyuppoHEedyOM9AhsbY=
+tag-tree@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/tag-tree/-/tag-tree-1.0.0.tgz#bd8caea7129a770a5284455adb729eb5c7d13b57"
+  integrity sha512-o+G3FpZtDYmkLKjQ4Wkj1G8KLSPR3BOu9s0t8VHq4yjCyyyAf+vvV+0VteTatTaHFh2bNazujICdH7UAUN9fug==
   dependencies:
-    babel-runtime "^6.22.0"
-    live-set "^0.4.0"
+    "@babel/runtime" "^7.0.0"
+    live-set "^1.0.0"
 
 tar@^4:
   version "4.4.8"
@@ -5365,7 +5364,7 @@ yargs@^13.1.0:
     y18n "^4.0.0"
     yargs-parser "^13.1.0"
 
-zen-observable@^0.6.0:
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.6.1.tgz#01dbed3bc8d02cbe9ee1112c83e04c807f647244"
-  integrity sha512-DKjFTL7siVLIUMZOFZ0alqMEdTsXPUxoCZzrvB2tdWEVN/6606Qh1nCfSTCAOZMrtcPzzFI3BXmwBKLAew52NA==
+zen-observable@^0.8.9:
+  version "0.8.14"
+  resolved "https://registry.yarnpkg.com/zen-observable/-/zen-observable-0.8.14.tgz#d33058359d335bc0db1f0af66158b32872af3bf7"
+  integrity sha512-kQz39uonEjEESwh+qCi83kcC3rZJGh4mrZW7xjkSQYXkq//JZHTtKo+6yuVloTgMtzsIWOJrjIrKvk/dqm0L5g==

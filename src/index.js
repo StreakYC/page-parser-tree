@@ -86,7 +86,7 @@ export default class PageParserTree {
   _logError: (err: Error, el: ?HTMLElement) => void;
   _options: PageParserTreeOptions;
   _tagOptions: Map<string, TagOptions>;
-  _tagsList: Array<{| tag: string, ownedBy?: ?(string[]) |}>;
+  _tagsList: Array<{| tag: string, ownedBy?: ?$ReadOnlyArray<string> |}>;
   _subscriptions: Array<LiveSetSubscription> = [];
 
   constructor(root: Document | HTMLElement, options: PageParserTreeOptions) {

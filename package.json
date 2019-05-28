@@ -29,9 +29,9 @@
   "homepage": "https://github.com/StreakYC/page-parser-tree#readme",
   "dependencies": {
     "@babel/runtime": "^7.4.5",
-    "live-set": "^0.4.1",
+    "live-set": "^1.0.0",
     "matches-selector-ng": "^1.0.0",
-    "tag-tree": "^0.4.0",
+    "tag-tree": "^1.0.0",
     "transducers.js": "^0.3.2"
   },
   "devDependencies": {
