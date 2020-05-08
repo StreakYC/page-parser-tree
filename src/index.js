@@ -27,9 +27,9 @@ export type Selector =
   | {| $log: string |};
 
 export type Watcher = {|
-  sources: Array<string | null>,
+  sources: $ReadOnlyArray<string | null>,
   tag: string,
-  selectors: Array<Selector>
+  selectors: $ReadOnlyArray<Selector>
 |};
 
 export type Finder = {|
