@@ -51,7 +51,7 @@
     "flow-copy-source": "^2.0.2",
     "husky": "^2.3.0",
     "jest": "^24.8.0",
-    "jsdom": "^11.0.0",
+    "jsdom": "^16.5.0",
     "pdelay": "^2.0.0",
     "prettier": "^1.14.0",
     "prettier-check": "^2.0.0",
