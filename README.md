@@ -304,8 +304,8 @@ the matched set.
 `{ $map: (el: HTMLElement) => ?HTMLElement }`
 This allows you to specify a function which will be called on every matched
 element, and each element in the matched set will be replaced with the element
-returned by your function. If your function returns null, then the element will
-just be removed from the matched set.
+returned by your function. If your function returns null or undefined, then
+the element will just be removed from the matched set.
 
 #### Watch
 `{ $watch: { attributeFilter: string[], cond: string | (el: HTMLElement) => boolean } }`
